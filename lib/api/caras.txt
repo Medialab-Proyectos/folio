@@ -1,0 +1,457 @@
+Archivo de audio 
+
+cars.m4a 
+
+ 
+
+Transcripción 
+
+00:00:00 Orador 1 
+
+La información principal, sí, entonces ya eso, si vas a actualizar un usuario, aquí está, simplemente mandas el ID, así se comportan los demás y mandas la información aquí hasta de la data que deberías recibir. 
+
+00:00:11 Orador 1 
+
+Listo, listo, así son los demás, mira, hay uno que está por idy otro que responde directamente al token. 
+
+00:00:19 Orador 1 
+
+Listo, esto de las compañías, estas otras facilities, pues me dijo Iván que lo vamos a registrar por base de datos, entonces el día de pasa la información para que quede ya seteada, listo. 
+
+00:00:30 Orador 1 
+
+directamente entonces pues ahí simplemente llamas al endpoint de facilities que extraería todas las facilities directamente y de companies vale en cuanto a los carros cuando vas a agregar los carros aquí ingresa la data del carro como tal no es el mismo por ahorita si necesitas, si necesitas crear otro usuario traelo desde acá, aunque aunque yo lo dije por defecto 
+
+00:01:02 Orador 1 
+
+Que sea de tipo usuario. 
+
+00:01:11 Orador 1 
+
+Sí, pero si necesitas crear otro, lo puedes registrar acá utilizando el out registro. 
+
+00:01:15 Orador 1 
+
+Listo, bueno, la creación del carro, esto solo es data. 
+
+00:01:20 Orador 1 
+
+Hay otro que dice user cars que hace referencia a la relación de usuario con un carro. 
+
+00:01:28 Orador 1 
+
+Entonces, pero aquí ya puedes subir imágenes. 
+
+00:01:30 Orador 1 
+
+Aquí está el tipo y la posición. 
+
+00:01:34 Orador 1 
+
+Sí, aquí es la binario, aquí está. 
+
+00:01:36 Orador 1 
+
+Aquí agregas las imágenes y agregas. 
+
+00:01:38 Orador 1 
+
+Yo estuve revisando esto y está subiendo datos, pero pues no sé cómo se está comportando con la aplicación. 
+
+00:01:44 Orador 1 
+
+Entonces es lo que toca revisar, ¿vale? 
+
+00:01:46 Orador 1 
+
+Bueno, aquí están los proyectos, va a registrar un proyecto, aquí está los récords para registrar un récord y que se asigna un proyecto por defecto, así que pronto lo necesitas. 
+
+00:01:56 Orador 1 
+
+Y también está para agregar los récord a un proyecto, uno más récord, listo, ya se relaciona o. 
+
+00:02:05 Orador 1 
+
+Si quieres, a esta por aparte, o sea, tú puedes registrar simplemente el récord y por aparte los las imágenes de los récords si tú lo quieres registrar y aquí está el project y el récord ID para que lo relaciones. 
+
+00:02:16 Orador 1 
+
+Listo, sí, o K, aquí está el resurver card es también que hace referencia a la ID de card, que como te dije, ahí está un endpoint por aparte que registra el carro y este es donde tú relacionas el carro con una o más imágenes. 
+
+00:02:32 Orador 1 
+
+Listo. 
+
+00:02:37 Orador 1 
+
+O K, vale, este user companies, este se tocaría agruparlo los usuarios con los con los usuarios, o sea, los usuarios de la que están relacionados con la compañía. 
+
+00:02:52 Orador 1 
+
+Esos usuarios, entonces aquel mi duda iba, estos son los usuarios, creo que vamos a registrar a partir del Excel, entonces no sé para irlos agregando, igual podemos ir ajustando esto. 
+
+00:03:03 Orador 1 
+
+Pero aquí ya tendrías, si quieres, puedes relacionar un usuario con el ID de usuario, allá arriba lo tienes y con la compañía que ya voy a dejar eso es listo. 
+
+00:03:13 Orador 1 
+
+Ahorita solo pues tenemos tengo una compañía de prueba que es la de Guerra de Folio, entonces tocaría registrarlo otro. 
+
+00:03:20 Orador 1 
+
+Listo, hasta ahí me sigues, listo, ahí en pues donde dice activar, desactivar que simplemente cambia el estado. 
+
+00:03:28 Orador 1 
+
+Si te das cuenta es el ID, el estado, entonces uno cero nada más. 
+
+00:03:33 Orador 1 
+
+Uno para activar y solo para desactivar. 
+
+00:03:35 Orador 1 
+
+Sí, tenemos los car facility, o sea, los carros que pertenecen a un facility. 
+
+00:03:41 Orador 1 
+
+Entonces aquí ya envías, pues el ID card y el ID de facility. 
+
+00:03:45 Orador 1 
+
+Sí, como su facility ya van a van a venir pre registrados, entonces ahí lo relacionas. 
+
+00:03:51 Orador 1 
+
+Este impaint todavía no lo he probado, este es el que haría referencia a eliminar toda la data del usuario, un botón por ahí. 
+
+00:03:58 Orador 1 
+
+Estos permisos no sé si los vayas a aplicar todavía. 
+
+00:04:03 Orador 1 
+
+quieres los puedes aplicar, pero directamente lo que va a hacer es voy a hacer la prueba listo, voy a voy a loguear, aunque yo no sé si tengo asignado, sí, sí, sí tengo un segundito, un segundito aquí, aquí, aquí, aquí, aquí, aquí, aquí le damos aquí a permisos 
+
+00:04:39 Orador 1 
+
+Bueno, aquí ya está logueado. 
+
+00:04:40 Orador 1 
+
+Entonces, ¿qué pasa? 
+
+00:04:42 Orador 1 
+
+Yo automáticamente el usuario con el token con el cual está logueado le va a tierra de los permisos. 
+
+00:04:48 Orador 1 
+
+Entonces ahí le dice, mira, dice el módulo user, por ejemplo, el como soy, creo que este usuario administrador me trae todos para el módulo user, uno lista, puede crear, puede resetear el password, puede desactivar. 
+
+00:05:02 Orador 1 
+
+Para el módulo Company, pues ese módulo lo tenemos para poder hacer todos estos permisos. 
+
+00:05:07 Orador 1 
+
+Mira, para el Facility, estos permisos, sí, uno significa que tiene permiso y cero que no. 
+
+00:05:13 Orador 1 
+
+¿Listo? 
+
+00:05:16 Orador 1 
+
+Entonces ahí está revisando. 
+
+00:05:21 Orador 1 
+
+Uno si tiene permiso, cero si no lo tiene. 
+
+00:05:24 Orador 1 
+
+¿Listo? 
+
+00:05:30 Orador 1 
+
+Aquí están los módulos, por ejemplo, todos los módulos que pasó y aquí está, por ejemplo, el módulo es un módulo dashboard, así como Iván pasó un Excel de cada rol y qué permisos tiene. 
+
+00:05:44 Orador 1 
+
+Igual no, si quieres, no te compliques con esto y dejarlo seteado, no hay problema, después lo miramos, podemos mirar el último, ¿vale? 
+
+00:05:54 Orador 1 
+
+Pero ahí está si lo quieres mirar, ¿vale? 
+
+00:05:57 Orador 1 
+
+Tenemos el módulo de las reacciones. 
+
+00:06:00 Orador 1 
+
+que crees las notificaciones, el nombre de la notificación, la descripción, el estatus, el tipo y la fecha en que expira esa notificación. 
+
+00:06:08 Orador 1 
+
+Ese es como administrador y a los usuarios a quién le vas a asignar esa notificación, estaría la notificación y el usuario, el ID de notificación y el usuario, listo. 
+
+00:06:21 Orador 1 
+
+Supongo Sound Push, pues ese tal vez no lo necesites, como sound Push nomás por ahorita, listo. 
+
+00:06:26 Orador 1 
+
+Y acá mira aquí hay el notificate user, el 
+
+00:06:29 Orador 1 
+
+Del Noti User ID, ahí trae las notificaciones del usuario, entonces trae, le mandas el ID del usuario y te trae pues la información de esa notificación que tiene asignada a su usuario, listo, o las notificaciones que tiene asignada a su usuario. 
+
+00:06:45 Orador 1 
+
+Esos son los endpoints de la app y estos son los endpoints que me estaba pidiendo Mario que ahí lo estoy ajustando. 
+
+00:06:53 Orador 1 
+
+Listo, eso por ahorita, no sé si de pronto hay algún endpoint que de pronto no mires. 
+
+00:06:58 Orador 1 
+
+O igual lo revisas y mañana los ajustamos más. 
+
+00:07:05 Orador 1 
+
+Si los pruebas, pruebalos, si está subiendo la información, yo probé los implementas, pero igual como los implementas y mirar de qué cosas encuentras y no hay problema. 
+
+00:07:16 Orador 1 
+
+Listo, lo revisamos. 
+
+00:07:20 Orador 1 
+
+Eso son relaciones así, son muy sencillos, no son tan complicados. 
+
+00:07:28 Orador 1 
+
+No sé, esto nomás es. 
+
+00:07:30 Orador 1 
+
+Ok. 
+
+00:07:39 Orador 1 
+
+Listo. 
+
+00:07:40 Orador 1 
+
+Hola Mario. 
+
+00:07:47 Orador 1 
+
+Ah, no, no. 
+
+00:07:48 Orador 1 
+
+Entrado. 
+
+00:07:49 Orador 1 
+
+Listo, eso por mi parte tenemos que revisar de enlazar el dominio con la IP para que no aparezca así, obviamente. 
+
+00:08:02 Orador 1 
+
+Y ya por ese lado estaríamos. 
+
+00:08:05 Orador 1 
+
+Tengo unas cosas, otros tiempos pendientes por ahí, pero estos son como los principales. 
+
+00:08:15 Orador 1 
+
+Ahí están. 
+
+00:08:17 Orador 1 
+
+Por categorías, pues no, los que faltan más que todo es probar este permisos, pero esto es de no, si cuál era cuál era, no, pero este de eliminar toda la información de un usuario, hacer una prueba que elimine todo, que sería un botoncito ahí nomás en la web o en la app, simplemente eso. 
+
+00:08:40 Orador 1 
+
+Estos que miras acá son más de la app que miramos con Mario, o sea, no son de la web. 
+
+00:08:46 Orador 1 
+
+Y tengo que mirar una cosa para, creo que era, yo no me acuerdo. 
+
+00:08:58 Orador 1 
+
+Tengo que mirar un tema de eso, es enviar un email, estos 2, unos 2 endpoints, el de eliminar el usuario y enviar un email de confirmación que puede eliminar pues su cuenta. 
+
+00:09:15 Orador 1 
+
+Y me gustaría es agregar por defecto cuando un usuario se registra en una compañía. 
+
+00:09:21 Orador 1 
+
+Esto de los facilities no sé, estoy pensando en cómo hacerlo. 
+
+00:09:27 Orador 1 
+
+Pero no son muchos, solo son esas dos cosas que ahorita no te bloquearían mucho. 
+
+00:09:44 Orador 1 
+
+Ahorita pues simplemente no tengo otra vez nada porque no tiene, no están relacionados, pero mira. 
+
+00:09:51 Orador 1 
+
+pero si te vas al companies si te va a traer pues las compañías que tarjeta tenemos revisadas solo tengo este nomás sí sí o sea ahí puedes crear si quieres puedes probarlos en pues la refolio, 
+
+00:10:23 Orador 1 
+
+ta ta ta y le doy guardar solo que eso lo que haría después ahí está ya está mira ahí está registrando y ahí me va a traer los ahí solo me estaba trayendo uno ya me trae dos mira listo Ah sí sí tengo ahorita el de eliminar si lo quieres eliminar ok listo y los facilities 
+
+00:10:51 Orador 1 
+
+Si de una vez pues tienes info y la quieres registrar tú, pues te puedes creer. 
+
+00:10:55 Orador 1 
+
+Yo no tengo registrado ninguno, creo yo. 
+
+00:10:56 Orador 1 
+
+A ver, creo que sí, porque estoy haciendo pruebas. 
+
+00:10:59 Orador 1 
+
+No, entonces lo eliminé. 
+
+00:11:01 Orador 1 
+
+Ajá. 
+
+00:11:04 Orador 1 
+
+Pero ahí está. 
+
+00:11:19 Orador 1 
+
+Internamente, allá está manejando como una estructura así que voy a mostrar de carpetas para que vean más o menos no entiendas. 
+
+00:11:27 Orador 1 
+
+¿Dónde está esto? 
+
+00:11:29 Orador 1 
+
+Estos no. 
+
+00:11:32 Orador 1 
+
+Este no ya no este no es perdón para que me entiendas cómo está estructurando las carpetas. 
+
+00:11:42 Orador 1 
+
+Así están estructurándose las carpetas. 
+
+00:11:44 Orador 1 
+
+No, ese no es. 
+
+00:11:46 Orador 1 
+
+Aquí estaba ese. 
+
+00:11:54 Orador 1 
+
+Este sería esa nota. 
+
+00:11:58 Orador 1 
+
+No, esto es para probar. 
+
+00:11:59 Orador 1 
+
+Bueno, 
+
+00:12:00 Orador 1 
+
+pero más o menos está así mira tenemos una carpeta user otra carpeta company sí dentro de esa carpeta user se registran con el ID digamos del usuario entonces aquí diría no sé el ID del usuario porque se crean unas carpetitas listo cuando son los usuarios como tal listo dentro de esas carpetas Ah, espérame, yo creo que tengo la 
+
+00:12:28 Orador 1 
+
+lo miramos un poquito más claro, un segundo, un segundo A ver, cargando Mira, se crea una carpeta user, esta es como por defecto, aquí cada uno tiene sus carpetas, son las carpetas del usuario dentro del sistema Sí, dentro de cada carpeta del usuario vienen Estas son las carpetas de Estas son las carpetas de los carros 
+
+00:13:02 Orador 1 
+
+Sí, de los cars que tiene ese usuario y en cada card hay image, project y surveys. 
+
+00:13:07 Orador 1 
+
+Listo. 
+
+00:13:08 Orador 1 
+
+Entonces, dentro de image están las imágenes, las como las imágenes generales del carro. 
+
+00:13:13 Orador 1 
+
+Listo, aquí, chun, chun, chun, listo, y en las projects estando por cada project se crea una ID del ID del proyecto. 
+
+00:13:22 Orador 1 
+
+Listo, dentro del proyecto estarían los récords. 
+
+00:13:25 Orador 1 
+
+En este caso este no tiene récord, pero se creó. 
+
+00:13:27 Orador 1 
+
+Mira, aquí están los récord, o sea, las imágenes de los récord. 
+
+00:13:31 Orador 1 
+
+que pertenece a ese proyecto y este está identificado así. 
+
+00:13:36 Orador 1 
+
+Esto más o menos esto se guarda, obviamente se está guardando en la base de datos también la ruta, entonces no hay problema. 
+
+00:13:43 Orador 1 
+
+Entonces mira los surveys tienen sus imágenes de los surveys que serían las imágenes ahí y está dentro de surveys. 
+
+00:13:52 Orador 1 
+
+Y de pronto otra cosa importante es que si te das cuenta aquí por ejemplo en facilities hay 
+
+00:13:58 Orador 1 
+
+Ya agregamos una imagen para que tengan los facilities, eso tenemos que subirlo así entonces por examples y casi ahí tiene pues el file path que sería el path de la de dónde está la imagen. 
+
+00:14:11 Orador 1 
+
+Si necesitas de pronto la accesión, el origin name hace referencia donde hay imágenes, hay un origin name, entonces hace referencia pues al nombre original de la imagen si lo necesitas y ya listo, no sé qué más. 
+
+00:14:30 Orador 1 
+
+¿Qué más necesites? 
+
+00:14:31 Orador 1 
+
+Por ese lado es eso. 
+
+00:14:49 Orador 1 
+
+Te toca mirar cómo te está obteniendo las imágenes, que no, eso no lo he probado directamente porque son datos y listo, en relación sería eso, listo, vale, vale, va el tip. 
+
+00:15:27 Orador 1 
+
+Vale, 10:30 no, entonces quedamos. 
+
+ 

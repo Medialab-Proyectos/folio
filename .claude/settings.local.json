@@ -1,0 +1,11 @@
+{
+  "permissions": {
+    "allow": [
+      "WebFetch(domain:3.14.11.227)",
+      "Bash(find C:UserscobenOneDriveDesktopGarageversion1Sof/src -type f -name *.json -o -name *.js -o -name *.jsx -o -name *.ts -o -name *.tsx -o -name *.md)",
+      "Bash(grep -E \"\\\\.ts$\")",
+      "WebFetch(domain:52.90.109.124)",
+      "Bash(curl -s http://52.90.109.124:8001/openapi.json)"
+    ]
+  }
+}

@@ -1,0 +1,129 @@
+Archivo de audio 
+
+garç.m4a 
+
+ 
+
+Transcripción 
+
+00:00:03 Orador 1 
+
+Aquí. 
+
+00:00:16 Orador 2 
+
+Vamos a cerrar aquí. 
+
+00:00:18 Orador 2 
+
+Vamos menos a. 
+
+00:00:24 Orador 2 
+
+A ver. 
+
+00:00:29 Orador 1 
+
+A todo le agreguemos un auténtico. 
+
+00:00:33 Orador 1 
+
+Ah, perdón, claro. 
+
+00:00:55 Orador 1 
+
+esta tiene una imagen, listo, todos tienen esta, mira que todos tienen fight URL y esta es el nombre de la imagen como está en S3 y la tengo como con se olvida por decirlo así, entonces ya te bota esta y esta es la URL, listo para acceder a la imagen, listo, ahí está. 
+
+00:01:17 Orador 3 
+
+Pero desde donde lo estás jalando desde el facility, ok, ya? 
+
+00:01:23 Orador 1 
+
+Sí, no, en todos los endplains vas a encontrar algo muy parecido en file URL y ese es set para acceder directamente a la imagen. 
+
+00:01:29 Orador 1 
+
+Listo, esta sí es la imagen como tal, pero no te la va a dejar acceder directamente porque eso está en s 3. 
+
+00:01:36 Orador 1 
+
+Entonces esta se puede acceder ahorita por 5 minutos, o sea por 5 minutos directamente hasta que vuelva a hacer la petición por seguridad para que no quede libre. 
+
+00:01:46 Orador 1 
+
+Yo le puedo evitar eso si quieres, pero igual. 
+
+00:01:48 Orador 3 
+
+Pues deberías quitarle porque hay personas que se quedan en la imagen durante mucho tiempo. 
+
+00:01:54 Orador 1 
+
+Bueno, o sea, van a mirar la imagen, a menos que cuando la vuelvas a cargar va a ser de otra petición en el token, entonces no importa. 
+
+00:02:03 Orador 3 
+
+Entonces es file ORL? 
+
+00:02:06 Orador 1 
+
+Si yo me quisiera llevar la imagen y tengo un link, entonces voy a tener cinco minutos para poderla ver y después ya no lo voy a tener. 
+
+00:02:14 Orador 1 
+
+Simplemente tiene un token al final, nada más. 
+
+00:02:17 Orador 3 
+
+Listo, solo es eso. 
+
+00:02:20 Orador 3 
+
+Entonces eso fue lo que ajusté, es que no, yo estaba conectándome con la otra. 
+
+00:02:27 Orador 1 
+
+Sí, la otra trae los datos de la, pero en la Sketch ya trae esa información, ¿listo. 
+
+00:02:33 Orador 3 
+
+Entonces, ¿hay algo más que hayas hecho que tenga que revisar? 
+
+00:02:37 Orador 1 
+
+Te agregué más ecos, de pronto los necesites, no sé. 
+
+00:02:43 Orador 1 
+
+más que todo te agregué cosas posible que las llegaras a necesitar por ejemplo te agregué bueno esta compañía eso sería para más después porque este trae las compañías y sus facilities directamente, o sea trae no solo la compañía sino sus facilities te agregué cositas así, o sea como que a ver, este de facilities te agregué los facilities y los card que están relacionados por si lo necesitas 
+
+00:03:13 Orador 1 
+
+así, cositas así, ah para los project también mira te agregue los project y dentro del project te va a traer los record y los record file por si lo necesitas aquí te va a traer una red te agregue es endpoint más que modificar ese ajuste que dice de la imagen nada más mira, el record, record files te trae como la raid o sea ya no solo te trae eso sino que te trae eso creo que eso, así nomás ok, perfecto. 
+
+00:03:41 Orador 3 
+
+Listo sí porque no sabía cómo hacerlo la imagen no bajaba me queda la imagen como cortada eso era lo que tenía de dos Bueno, entonces me voy a poner a hacer eso ahorita gracias ¿Qué más? 
+
+00:03:59 Orador 3 
+
+No, es decir, pues. 
+
+00:04:02 Orador 1 
+
+Si quieres prueba de una vez para que haga la prueba como quieras. 
+
+00:04:05 Orador 3 
+
+No, espérate, es que no estoy aquí con el. 
+
+00:04:07 Orador 3 
+
+estoy aquí en el otro computador aquí haciendo unas cosas pero pues bueno 
+
+00:04:12 Orador 3 
+
+Vale, aquí está, yo voy a estar pendiente, mira, ahí, a ver, mira, mira, se puede esperar acá, esta es la esta es la interfaz, bien. 
+
+ 
