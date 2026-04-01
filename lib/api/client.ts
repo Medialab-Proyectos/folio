@@ -1,4 +1,9 @@
-const BASE_URL = process.env.NEXT_PUBLIC_API_URL ?? 'http://3.14.11.227:8001';
+// On the browser we always go through our own HTTPS proxy to avoid Mixed Content.
+// On the server (SSR/API routes) we call the backend directly.
+const BASE_URL =
+  typeof window !== 'undefined'
+    ? '/api/proxy'
+    : (process.env.BACKEND_URL ?? 'http://52.90.109.124:8001');
 
 const TOKEN_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';

@@ -133,7 +133,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // Background fetch for authenticated backend photos
         surveyCarsApi.list().then(surveyCarsData => {
-          const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://52.90.109.124:8001';
+          const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.BACKEND_URL ?? 'http://52.90.109.124:8001');
           setStore(currentStore => {
             if (!currentStore) return currentStore;
             return {
@@ -272,7 +272,7 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Background fetch for survey photos
       surveyCarsApi.list().then(surveyCarsData => {
-        const BASE_URL = process.env.NEXT_PUBLIC_API_URL || 'http://52.90.109.124:8001';
+        const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.BACKEND_URL ?? 'http://52.90.109.124:8001');
         let localPhotos: Record<string, any> = {};
         if (typeof window !== 'undefined') {
           try { localPhotos = JSON.parse(localStorage.getItem('GF_VEHICLE_PHOTOS') || '{}'); } catch {}
