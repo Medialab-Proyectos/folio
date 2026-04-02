@@ -59,7 +59,10 @@ export async function apiRequest<T>(
   path: string,
   { body, params, auth = true, method = 'GET', headers = {}, ...rest }: RequestOptions = {}
 ): Promise<T> {
-  const url = new URL(`${BASE_URL}${path}`);
+  const rawUrl = `${BASE_URL}${path}`;
+  const url = rawUrl.startsWith('http')
+    ? new URL(rawUrl)
+    : new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
 
   if (params) {
     Object.entries(params).forEach(([k, v]) => {
