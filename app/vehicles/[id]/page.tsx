@@ -4,22 +4,21 @@ import { useEffect, useState } from 'react';
 import { useRouter, useParams } from 'next/navigation';
 import { useApp } from '@/lib/context/app-context';
 import { Button } from '@/components/ui/button';
-import { 
-  ArrowLeft, 
-  LogIn, 
-  LogOut, 
-  Archive, 
-  AlertCircle, 
-  Calendar,
-  Gauge,
-  FileText,
-  Camera,
+import {
+  ArrowLeft,
+  LogIn,
+  LogOut,
+  Archive,
+  AlertCircle,
   AlertTriangle,
   Pencil,
   Loader2,
   Car,
   ChevronRight,
-  X
+  ChevronDown,
+  ChevronUp,
+  X,
+  CheckCircle2,
 } from 'lucide-react';
 import { Vehicle, VehicleEvent } from '@/lib/types';
 import { carsApi } from '@/lib/api/cars';
@@ -34,10 +33,10 @@ export default function VehicleDetailPage() {
   const { currentUser, store, showToast, addActivityLog, refreshVehicles, setVehicleEvents } = useApp();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [showCheckInModal, setShowCheckInModal] = useState(false);
-  const [showCheckOutModal, setShowCheckOutModal] = useState(false);
   const [showArchiveModal, setShowArchiveModal] = useState(false);
   const [showEditModal, setShowEditModal] = useState(false);
   const [actionLoading, setActionLoading] = useState(false);
+  const [expandedEventId, setExpandedEventId] = useState<string | null>(null);
 
   useEffect(() => {
     if (!currentUser) {
@@ -78,13 +77,7 @@ export default function VehicleDetailPage() {
     try {
       const now = new Date().toISOString();
       const newStatus = isArchived ? 'in_storage' : 'archived';
-      await carsApi.update(vehicle.id, vehicleToCarUpdate({
-        status: newStatus,
-        statusUpdatedAt: now,
-        color: vehicle.color,
-        registrationCompleted: vehicle.registrationCompleted,
-        notes: vehicle.notes,
-      }, undefined));
+      await carsApi.update(vehicle.id, vehicleToCarUpdate({ ...vehicle, status: newStatus, statusUpdatedAt: now }));
 
       addActivityLog({
         entityType: 'vehicle',
@@ -113,16 +106,13 @@ export default function VehicleDetailPage() {
     setActionLoading(true);
     try {
       const now = new Date().toISOString();
-      await carsApi.update(vehicle.id, vehicleToCarUpdate(
-        { status: 'in_storage', statusUpdatedAt: now },
-        undefined
-      ));
+      await carsApi.update(vehicle.id, vehicleToCarUpdate({ ...vehicle, status: 'in_storage', statusUpdatedAt: now }));
 
       const newEvent: VehicleEvent = {
         id: `event_${Date.now()}`,
         eventType: 'arrival_after_use',
         vehicleId: vehicle.id,
-        facilityId: vehicle.facilityId,
+        facilityId: vehicle.facilityId || currentUser.facilityId,
         staffUserId: currentUser.id,
         timestamp: now,
         damagesCaptured: [],
@@ -143,50 +133,6 @@ export default function VehicleDetailPage() {
       setShowCheckInModal(false);
     } catch {
       showToast('Failed to check in. Please try again.', 'error');
-    } finally {
-      setActionLoading(false);
-    }
-  };
-
-  const handleCheckOut = async () => {
-    if (vehicle.status !== 'in_storage') {
-      showToast('Vehicle is already checked out', 'info');
-      return;
-    }
-
-    setActionLoading(true);
-    try {
-      const now = new Date().toISOString();
-      await carsApi.update(vehicle.id, vehicleToCarUpdate(
-        { status: 'checked_out', statusUpdatedAt: now },
-        undefined
-      ));
-
-      const newEvent: VehicleEvent = {
-        id: `event_${Date.now()}`,
-        eventType: 'departure_after_use',
-        vehicleId: vehicle.id,
-        facilityId: vehicle.facilityId,
-        staffUserId: currentUser.id,
-        timestamp: now,
-        damagesCaptured: [],
-        notes: '',
-      };
-      setVehicleEvents([newEvent, ...store.vehicleEvents]);
-
-      addActivityLog({
-        entityType: 'vehicle',
-        entityId: vehicle.id,
-        action: 'Vehicle checked out',
-        actorId: currentUser.id,
-        actorName: `${currentUser.firstName} ${currentUser.lastName}`,
-      });
-
-      await refreshVehicles();
-      showToast('Vehicle checked out successfully', 'success');
-      setShowCheckOutModal(false);
-    } catch {
-      showToast('Failed to check out. Please try again.', 'error');
     } finally {
       setActionLoading(false);
     }
@@ -276,7 +222,7 @@ export default function VehicleDetailPage() {
         {/* Actions */}
         <div className="grid grid-cols-2 gap-3 animate-fade-in-up delay-75">
           <Button
-            onClick={() => setShowCheckInModal(true)}
+            onClick={() => canCheckIn ? router.push(`/vehicles/check-in/${vehicle.id}`) : undefined}
             disabled={!canCheckIn}
             className={`h-13 rounded-xl font-semibold text-sm transition-all ${canCheckIn ? 'btn-dark' : ''}`}
             variant={canCheckIn ? 'default' : 'outline'}
@@ -285,7 +231,7 @@ export default function VehicleDetailPage() {
             Check-in
           </Button>
           <Button
-            onClick={() => setShowCheckOutModal(true)}
+            onClick={() => canCheckOut ? router.push(`/vehicles/check-out/${vehicle.id}`) : undefined}
             disabled={!canCheckOut}
             className={`h-13 rounded-xl font-semibold text-sm transition-all ${canCheckOut ? 'btn-dark' : ''}`}
             variant={canCheckOut ? 'default' : 'outline'}
@@ -379,6 +325,36 @@ export default function VehicleDetailPage() {
                 <p className="font-medium">{vehicle.odometer.toLocaleString()} mi</p>
               </div>
             )}
+            {vehicle.registrationExpDate && (
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Registration Exp.</p>
+                {(() => {
+                  const d = new Date(vehicle.registrationExpDate!);
+                  const expired = d < new Date();
+                  return (
+                    <p className={`text-sm font-medium flex items-center gap-1 ${expired ? 'text-destructive' : ''}`}>
+                      {expired && <AlertCircle className="w-3 h-3 flex-shrink-0" />}
+                      {d.toLocaleDateString()}
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
+            {vehicle.insuranceExpDate && (
+              <div className="space-y-1">
+                <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Insurance Exp.</p>
+                {(() => {
+                  const d = new Date(vehicle.insuranceExpDate!);
+                  const expired = d < new Date();
+                  return (
+                    <p className={`text-sm font-medium flex items-center gap-1 ${expired ? 'text-destructive' : ''}`}>
+                      {expired && <AlertCircle className="w-3 h-3 flex-shrink-0" />}
+                      {d.toLocaleDateString()}
+                    </p>
+                  );
+                })()}
+              </div>
+            )}
           </div>
 
           {vehicle.notes && (
@@ -430,38 +406,100 @@ export default function VehicleDetailPage() {
           </div>
         )}
 
-        {/* Activity Log */}
+        {/* Movement History */}
         <div className="card-premium p-5 animate-fade-in-up delay-400">
-          <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">Activity Log</h3>
+          <h3 className="font-bold text-sm uppercase tracking-wider text-muted-foreground mb-3">Movement History</h3>
           {events.length === 0 ? (
             <div className="py-6 text-center">
               <p className="text-sm text-muted-foreground/60">No activity yet</p>
             </div>
           ) : (
             <div className="space-y-1">
-              {events.slice(0, 10).map((event, idx) => {
+              {events.slice(0, 20).map((event) => {
                 const staff = store.staffUsers.find(s => s.id === event.staffUserId);
+                const eventDamages = store.damages.filter(d => d.eventId === event.id);
+                const isExpanded = expandedEventId === event.id;
+                const isCheckIn = event.eventType === 'arrival_after_use';
+                const eventDate = new Date(event.timestamp);
+
                 return (
-                  <div key={event.id} className="flex items-center gap-3 p-2.5 hover:bg-muted/30 rounded-xl transition-colors">
-                    <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
-                      event.eventType === 'arrival_after_use' 
-                        ? 'bg-success/10 text-success' 
-                        : 'bg-blue-500/10 text-blue-600'
-                    }`}>
-                      {event.eventType === 'arrival_after_use' ? (
-                        <LogIn className="w-4 h-4" />
-                      ) : (
-                        <LogOut className="w-4 h-4" />
-                      )}
-                    </div>
-                    <div className="flex-1">
-                      <p className="text-sm font-medium">
-                        {event.eventType === 'arrival_after_use' ? 'Checked in' : 'Checked out'}
-                      </p>
-                      <p className="text-xs text-muted-foreground">
-                        by {staff?.firstName} • {new Date(event.timestamp).toLocaleDateString()}
-                      </p>
-                    </div>
+                  <div key={event.id} className="rounded-xl overflow-hidden border border-border/40">
+                    <button
+                      onClick={() => setExpandedEventId(isExpanded ? null : event.id)}
+                      className="w-full flex items-center gap-3 p-3 hover:bg-muted/30 transition-colors text-left"
+                    >
+                      <div className={`w-9 h-9 rounded-full flex items-center justify-center flex-shrink-0 ${
+                        isCheckIn ? 'bg-success/10 text-success' : 'bg-blue-500/10 text-blue-600'
+                      }`}>
+                        {isCheckIn ? <LogIn className="w-4 h-4" /> : <LogOut className="w-4 h-4" />}
+                      </div>
+                      <div className="flex-1 min-w-0">
+                        <p className="text-sm font-semibold">
+                          {isCheckIn ? 'Checked In' : 'Checked Out'}
+                        </p>
+                        <p className="text-xs text-muted-foreground truncate">
+                          {staff ? `${staff.firstName} ${staff.lastName}` : 'Unknown'} • {eventDate.toLocaleDateString()} {eventDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2 flex-shrink-0">
+                        {eventDamages.length > 0 && (
+                          <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
+                            {eventDamages.length} dmg
+                          </span>
+                        )}
+                        {isExpanded
+                          ? <ChevronUp className="w-4 h-4 text-muted-foreground" />
+                          : <ChevronDown className="w-4 h-4 text-muted-foreground" />
+                        }
+                      </div>
+                    </button>
+
+                    {isExpanded && (
+                      <div className="border-t border-border/40 p-3 space-y-3 bg-muted/10">
+                        {/* Damages */}
+                        {eventDamages.length === 0 ? (
+                          <div className="flex items-center gap-2 text-success">
+                            <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" />
+                            <p className="text-xs font-medium">No damages recorded</p>
+                          </div>
+                        ) : (
+                          <div className="space-y-1.5">
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold">Damages</p>
+                            {eventDamages.map(damage => (
+                              <div key={damage.id} className="flex items-center justify-between p-2 rounded-lg bg-card border border-border/30">
+                                <div className="flex items-center gap-2">
+                                  <AlertTriangle className={`w-3 h-3 flex-shrink-0 ${damage.status === 'resolved' ? 'text-muted-foreground' : 'text-destructive'}`} />
+                                  <span className={`text-xs font-medium capitalize ${damage.status === 'resolved' ? 'line-through text-muted-foreground' : ''}`}>
+                                    {damage.carPart.replace(/_/g, ' ')}
+                                  </span>
+                                  {damage.description && (
+                                    <span className="text-xs text-muted-foreground hidden sm:inline truncate max-w-[120px]">— {damage.description}</span>
+                                  )}
+                                </div>
+                                <div className="flex items-center gap-1.5">
+                                  <span className={`text-[10px] font-semibold px-1.5 py-0.5 rounded-full capitalize ${
+                                    damage.severity === 'high' ? 'bg-destructive/10 text-destructive' :
+                                    damage.severity === 'medium' ? 'bg-yellow-500/10 text-yellow-700' :
+                                    'bg-muted text-muted-foreground'
+                                  }`}>{damage.severity}</span>
+                                  {damage.status === 'resolved' && (
+                                    <span className="text-[10px] font-semibold px-1.5 py-0.5 rounded-full bg-success/10 text-success">resolved</span>
+                                  )}
+                                </div>
+                              </div>
+                            ))}
+                          </div>
+                        )}
+
+                        {/* Notes */}
+                        {event.notes && (
+                          <div>
+                            <p className="text-[10px] uppercase tracking-wider text-muted-foreground font-semibold mb-1">Notes</p>
+                            <p className="text-xs text-muted-foreground">{event.notes}</p>
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 );
               })}
@@ -491,33 +529,6 @@ export default function VehicleDetailPage() {
                 {actionLoading ? (
                   <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing...</span>
                 ) : 'Confirm Check-in'}
-              </Button>
-            </div>
-          </div>
-        </div>
-      )}
-
-      {/* Check-out Modal */}
-      {showCheckOutModal && (
-        <div className="fixed inset-0 bg-black/60 z-50 flex items-end sm:items-center justify-center p-4 animate-fade-in" onClick={() => setShowCheckOutModal(false)}>
-          <div className="bg-card rounded-2xl w-full max-w-md p-6 space-y-4 animate-slide-in-bottom shadow-2xl" onClick={e => e.stopPropagation()}>
-            <div className="flex items-center justify-between">
-              <h2 className="text-xl font-bold">Check-out Vehicle</h2>
-              <button onClick={() => setShowCheckOutModal(false)} className="p-2 hover:bg-muted rounded-full transition-colors min-h-0">
-                <X className="w-4 h-4" />
-              </button>
-            </div>
-            <p className="text-sm text-muted-foreground">
-              Confirm check-out for <span className="font-semibold text-foreground">{vehicle.make} {vehicle.model}</span> ({vehicle.licensePlate})
-            </p>
-            <div className="flex gap-3 pt-2">
-              <Button variant="outline" onClick={() => setShowCheckOutModal(false)} className="flex-1 rounded-xl h-12">
-                Cancel
-              </Button>
-              <Button onClick={handleCheckOut} disabled={actionLoading} className="flex-1 btn-dark rounded-xl h-12">
-                {actionLoading ? (
-                  <span className="flex items-center gap-2"><Loader2 className="w-4 h-4 animate-spin" />Processing...</span>
-                ) : 'Confirm Check-out'}
               </Button>
             </div>
           </div>

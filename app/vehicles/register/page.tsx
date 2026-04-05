@@ -7,10 +7,12 @@ import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
 import { Label } from '@/components/ui/label';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Camera, Check, X, Plus, Car, Loader2, Image as ImageIcon } from 'lucide-react';
+import { ArrowLeft, Camera, Check, X, Plus, Car, Loader2, Image as ImageIcon, AlertCircle } from 'lucide-react';
 import { Vehicle } from '@/lib/types';
 import { carsApi } from '@/lib/api/cars';
 import { surveyCarsApi } from '@/lib/api/survey-cars';
+import { userCarsApi } from '@/lib/api/user-cars';
+import { aicardApi } from '@/lib/api/aicard';
 import { vehicleToCarCreate } from '@/lib/api/mappers';
 import { CreateMemberModal } from '@/components/shared/create-member-modal';
 import { GarageFolioLogo } from '@/components/shared/garagefolio-logo';
@@ -46,6 +48,12 @@ export default function VehicleRegisterPage() {
   });
 
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const step1FileInputRef = useRef<HTMLInputElement>(null);
+  // One input ref per zone in step 3 — button→ref pattern (more reliable than label+hidden on iOS)
+  const zoneInputRefs = useRef<Record<string, HTMLInputElement | null>>({});
+  const [aiAnalyzing, setAiAnalyzing] = useState(false);
+  const [aiDetected, setAiDetected] = useState<boolean | null>(null);
+  const [aiError, setAiError] = useState<string | null>(null);
 
   if (!currentUser) {
     router.push('/');
@@ -56,6 +64,10 @@ export default function VehicleRegisterPage() {
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Reset so the same file can be selected again (required on iOS)
+    e.target.value = '';
+
+    // Read as dataURL for local preview
     const reader = new FileReader();
     reader.onload = (event) => {
       const dataUrl = event.target?.result as string;
@@ -69,6 +81,44 @@ export default function VehicleRegisterPage() {
       }
     };
     reader.readAsDataURL(file);
+
+    // AI analysis only for the initial capture (step 0) — runs in background.
+    // Uses /aicard/ (basic endpoint, returns: brand, model, year, color, plate).
+    if (step === 0) {
+      setAiAnalyzing(true);
+      setAiDetected(null);
+      setAiError(null);
+      aicardApi.analyze(file)
+        .then(result => {
+          if (!result) {
+            setAiDetected(false);
+            setAiError('No vehicle detected. Please fill in the details manually.');
+            return;
+          }
+          // AICardBasicResponse fields: brand, model, year, color, plate
+          const hasData = result.brand || result.model || result.plate;
+          if (hasData) {
+            setAiDetected(true);
+            setFormData(prev => ({
+              ...prev,
+              ...(result.brand ? { make: result.brand } : {}),
+              ...(result.model ? { model: result.model } : {}),
+              ...(result.year ? { year: parseInt(result.year) || prev.year } : {}),
+              ...(result.color ? { color: result.color } : {}),
+              ...(result.plate ? { licensePlate: result.plate.toUpperCase() } : {}),
+            }));
+          } else {
+            setAiDetected(false);
+            setAiError('Could not read vehicle details. Please fill in manually.');
+          }
+        })
+        .catch((err: unknown) => {
+          setAiDetected(false);
+          const msg = err instanceof Error ? err.message : 'AI analysis unavailable.';
+          setAiError(msg);
+        })
+        .finally(() => setAiAnalyzing(false));
+    }
   };
 
   const handleSubmit = async () => {
@@ -119,7 +169,13 @@ export default function VehicleRegisterPage() {
     try {
       const created = await carsApi.create(vehicleToCarCreate(newVehicle));
 
-      // Because the backend doesn't support massive base64 image strings strictly in strings (causes 500 error), 
+      // Associate car with the owner user (cars_user relation)
+      if (formData.clientId) {
+        userCarsApi.create({ user_id: formData.clientId, car_id: created.id, status_car: 1 })
+          .catch(() => {}); // non-blocking — car already has user_id on creation
+      }
+
+      // Because the backend doesn't support massive base64 image strings strictly in strings (causes 500 error),
       // we save local files AND send the actual binary Files via surveyCarsApi as indicated in caras.txt.
       if (typeof window !== 'undefined') {
         const photosKey = 'GF_VEHICLE_PHOTOS';
@@ -207,8 +263,9 @@ export default function VehicleRegisterPage() {
                 accept="image/*"
                 capture="environment"
                 onChange={(e) => {
+                  const hasFile = !!e.target.files?.[0];
                   handlePhotoCapture(e);
-                  if (e.target.files?.[0]) {
+                  if (hasFile) {
                     setTimeout(() => setStep(1), 300);
                   }
                 }}
@@ -232,109 +289,162 @@ export default function VehicleRegisterPage() {
               <div className="relative rounded-2xl overflow-hidden shadow-lg">
                 <img src={rearPhoto} alt="Rear view" className="w-full rounded-2xl" />
                 <div className="absolute top-3 right-3 animate-scale-in">
-                  <div className="bg-success text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
-                    <Check className="w-3.5 h-3.5" strokeWidth={3} />
-                    Vehicle detected
-                  </div>
+                  {aiAnalyzing ? (
+                    <div className="bg-black/70 text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
+                      <Loader2 className="w-3.5 h-3.5 animate-spin" />
+                      Analyzing...
+                    </div>
+                  ) : aiDetected === true ? (
+                    <div className="bg-success text-white px-3 py-1.5 rounded-full text-xs font-semibold flex items-center gap-1.5 shadow-lg backdrop-blur-sm">
+                      <Check className="w-3.5 h-3.5" strokeWidth={3} />
+                      Vehicle detected
+                    </div>
+                  ) : null}
                 </div>
-                <Button
-                  size="sm"
-                  variant="secondary"
-                  onClick={() => setRearPhoto(null)}
-                  className="absolute bottom-3 right-3 shadow-lg hover:shadow-xl transition-all active:scale-95 rounded-xl bg-white/90 text-foreground"
+                {/* Change Photo — own input, step1FileInputRef, since step-0 input is unmounted */}
+                <button
+                  type="button"
+                  onClick={() => step1FileInputRef.current?.click()}
+                  className="absolute bottom-3 right-3 shadow-lg hover:shadow-xl transition-all active:scale-95 rounded-xl bg-white/90 text-foreground text-xs font-semibold px-3 py-1.5"
                 >
                   Change Photo
-                </Button>
+                </button>
               </div>
             )}
 
-            <div className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="make" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Brand *</Label>
-                <Input
-                  id="make"
-                  value={formData.make}
-                  onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
-                  placeholder="e.g. Porsche"
-                  required
-                  className="h-12 rounded-xl"
-                />
-              </div>
+            {/* Hidden input for step 1 photo changes */}
+            <input
+              ref={step1FileInputRef}
+              type="file"
+              accept="image/*"
+              className="hidden"
+              onChange={(e) => {
+                setAiDetected(null);
+                setAiError(null);
+                handlePhotoCapture(e);
+              }}
+            />
 
-              <div className="space-y-2">
-                <Label htmlFor="model" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Model *</Label>
-                <Input
-                  id="model"
-                  value={formData.model}
-                  onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
-                  placeholder="e.g. 911"
-                  required
-                  className="h-12 rounded-xl"
-                />
-              </div>
+            {/* Add Rear Photo — shown when no photo yet, uses same step1 input */}
+            {!rearPhoto && (
+              <button
+                type="button"
+                onClick={() => step1FileInputRef.current?.click()}
+                className="w-full rounded-xl border-2 border-dashed border-border/60 h-12 flex items-center justify-center gap-2 hover:border-accent/50 hover:bg-accent/5 transition-all text-sm font-medium text-muted-foreground"
+              >
+                <Camera className="w-4 h-4" />
+                Add Rear Photo
+              </button>
+            )}
 
-              <div className="grid grid-cols-2 gap-3">
+            {/* AI error banner — shown when analysis fails */}
+            {aiError && !aiAnalyzing && (
+              <div className="flex items-start gap-3 p-4 rounded-xl bg-amber-500/10 border border-amber-500/30 text-amber-700 dark:text-amber-400">
+                <AlertCircle className="w-4 h-4 flex-shrink-0 mt-0.5" />
+                <div className="text-sm">
+                  <p className="font-semibold mb-0.5">AI could not process the image</p>
+                  <p className="text-xs opacity-80">{aiError} — fill in the details manually below.</p>
+                </div>
+              </div>
+            )}
+
+            {/* Form fields — blocked with overlay while AI is analyzing */}
+            <div className="relative">
+              {aiAnalyzing && (
+                <div className="absolute inset-0 z-10 rounded-xl bg-background/70 backdrop-blur-sm flex flex-col items-center justify-center gap-3">
+                  <Loader2 className="w-7 h-7 animate-spin text-accent" />
+                  <p className="text-sm font-medium text-foreground">Analyzing image…</p>
+                  <p className="text-xs text-muted-foreground">Fields will unlock when done</p>
+                </div>
+              )}
+              <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label htmlFor="year" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Year *</Label>
+                  <Label htmlFor="make" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Brand *</Label>
                   <Input
-                    id="year"
-                    type="number"
-                    value={formData.year}
-                    onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                    id="make"
+                    value={formData.make}
+                    onChange={(e) => setFormData(prev => ({ ...prev, make: e.target.value }))}
+                    placeholder="e.g. Porsche"
                     required
+                    disabled={aiAnalyzing}
                     className="h-12 rounded-xl"
                   />
                 </div>
+
                 <div className="space-y-2">
-                  <Label htmlFor="color" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Color *</Label>
+                  <Label htmlFor="model" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Model *</Label>
                   <Input
-                    id="color"
-                    value={formData.color}
-                    onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
-                    placeholder="Black"
+                    id="model"
+                    value={formData.model}
+                    onChange={(e) => setFormData(prev => ({ ...prev, model: e.target.value }))}
+                    placeholder="e.g. 911"
                     required
+                    disabled={aiAnalyzing}
                     className="h-12 rounded-xl"
                   />
                 </div>
-              </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="plate" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">License Plate *</Label>
-                <Input
-                  id="plate"
-                  value={formData.licensePlate}
-                  onChange={(e) => setFormData(prev => ({ ...prev, licensePlate: e.target.value.toUpperCase() }))}
-                  placeholder="ABC123"
-                  required
-                  className="uppercase h-12 rounded-xl"
-                />
-              </div>
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="space-y-2">
+                    <Label htmlFor="year" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Year *</Label>
+                    <Input
+                      id="year"
+                      type="number"
+                      value={formData.year}
+                      onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                      required
+                      disabled={aiAnalyzing}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label htmlFor="color" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">Color *</Label>
+                    <Input
+                      id="color"
+                      value={formData.color}
+                      onChange={(e) => setFormData(prev => ({ ...prev, color: e.target.value }))}
+                      placeholder="Black"
+                      required
+                      disabled={aiAnalyzing}
+                      className="h-12 rounded-xl"
+                    />
+                  </div>
+                </div>
 
-              <div className="space-y-2">
-                <Label htmlFor="vin" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">VIN (17 characters)</Label>
-                <Input
-                  id="vin"
-                  value={formData.vin}
-                  onChange={(e) => setFormData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
-                  placeholder="Leave blank to auto-generate"
-                  maxLength={17}
-                  className="uppercase font-mono text-sm h-12 rounded-xl"
-                />
-                {formData.vin && formData.vin.length !== 17 && formData.vin.length > 0 && (
-                  <p className="text-xs text-destructive flex items-center gap-1">
-                    <X className="w-3 h-3" />
-                    VIN must be exactly 17 characters ({formData.vin.length}/17)
-                  </p>
-                )}
+                <div className="space-y-2">
+                  <Label htmlFor="plate" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">License Plate *</Label>
+                  <Input
+                    id="plate"
+                    value={formData.licensePlate}
+                    onChange={(e) => setFormData(prev => ({ ...prev, licensePlate: e.target.value.toUpperCase() }))}
+                    placeholder="ABC123"
+                    required
+                    disabled={aiAnalyzing}
+                    className="uppercase h-12 rounded-xl"
+                  />
+                </div>
+
+                <div className="space-y-2">
+                  <Label htmlFor="vin" className="text-xs uppercase tracking-wider font-semibold text-muted-foreground">VIN (17 characters)</Label>
+                  <Input
+                    id="vin"
+                    value={formData.vin}
+                    onChange={(e) => setFormData(prev => ({ ...prev, vin: e.target.value.toUpperCase() }))}
+                    placeholder="Leave blank to auto-generate"
+                    maxLength={17}
+                    disabled={aiAnalyzing}
+                    className="uppercase font-mono text-sm h-12 rounded-xl"
+                  />
+                  {formData.vin && formData.vin.length !== 17 && formData.vin.length > 0 && (
+                    <p className="text-xs text-destructive flex items-center gap-1">
+                      <X className="w-3 h-3" />
+                      VIN must be exactly 17 characters ({formData.vin.length}/17)
+                    </p>
+                  )}
+                </div>
               </div>
             </div>
 
-            {!rearPhoto && (
-              <Button variant="outline" onClick={() => fileInputRef.current?.click()} className="w-full rounded-xl border-2 border-dashed h-12 hover:border-accent/50 transition-all">
-                <Camera className="w-4 h-4 mr-2" />
-                Add Rear Photo
-              </Button>
-            )}
           </div>
         );
 
@@ -395,31 +505,82 @@ export default function VehicleRegisterPage() {
               <p className="text-xs text-muted-foreground">Optional but recommended for complete registration</p>
             </div>
 
-            {['front', 'left', 'right', 'interior'].map((section) => (
-              <div key={section} className="space-y-2">
-                <Label className="capitalize text-sm font-medium">{section} {section !== 'interior' ? 'Exterior' : ''}</Label>
-                <div className="grid grid-cols-4 gap-2">
-                  {photos[section as keyof typeof photos].map((photo, idx) => (
-                    <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted shadow-sm">
-                      <img src={photo} alt={`${section} ${idx + 1}`} className="object-cover w-full h-full" />
-                    </div>
-                  ))}
-                  {photos[section as keyof typeof photos].length < 4 && (
-                    <label className="aspect-square rounded-xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center cursor-pointer hover:border-accent/50 hover:bg-accent/5 transition-all duration-300 group">
-                      <input
-                        type="file"
-                        accept="image/*"
-                        capture="environment"
-                        onChange={(e) => handlePhotoCapture(e, section as keyof typeof photos)}
-                        className="hidden"
-                      />
-                      <Camera className="w-5 h-5 text-muted-foreground/50 group-hover:text-accent transition-colors" />
-                      <span className="text-[9px] text-muted-foreground/50 mt-1 group-hover:text-accent transition-colors">Add</span>
-                    </label>
-                  )}
+            {['front', 'rear', 'left', 'right', 'interior'].map((section) => {
+              // For rear: rearPhoto from step 0/1 is the first slot, photos.rear are additional
+              const isRear = section === 'rear';
+              const sectionPhotos = photos[section as keyof typeof photos];
+              const effectivePhotos: string[] = isRear && rearPhoto
+                ? [rearPhoto, ...sectionPhotos]
+                : sectionPhotos;
+              const canAdd = effectivePhotos.length < 4;
+
+              return (
+                <div key={section} className="space-y-2">
+                  <div className="flex items-center justify-between">
+                    <Label className="capitalize text-sm font-medium">
+                      {section} {section !== 'interior' ? 'Exterior' : ''}
+                    </Label>
+                    <span className="text-[10px] text-muted-foreground">{effectivePhotos.length}/4</span>
+                  </div>
+                  <div className="grid grid-cols-4 gap-2">
+                    {effectivePhotos.map((photo, idx) => {
+                      const handleRemove = () => {
+                        if (isRear && idx === 0 && rearPhoto) {
+                          // First rear photo is the scan photo
+                          setRearPhoto(null);
+                        } else {
+                          // Offset index for rear (slot 0 is rearPhoto, rest are photos.rear)
+                          const arrIdx = isRear && rearPhoto ? idx - 1 : idx;
+                          setPhotos(prev => ({
+                            ...prev,
+                            [section]: prev[section as keyof typeof photos].filter((_, i) => i !== arrIdx),
+                          }));
+                        }
+                      };
+                      return (
+                        <div key={idx} className="relative aspect-square rounded-xl overflow-hidden bg-muted shadow-sm group">
+                          <img src={photo} alt={`${section} ${idx + 1}`} className="object-cover w-full h-full" />
+                          {/* Remove button */}
+                          <button
+                            type="button"
+                            onClick={handleRemove}
+                            className="absolute top-1 right-1 w-6 h-6 rounded-full bg-black/60 text-white flex items-center justify-center opacity-0 group-hover:opacity-100 active:opacity-100 transition-opacity"
+                          >
+                            <X className="w-3 h-3" />
+                          </button>
+                          {/* Badge on first rear photo */}
+                          {isRear && idx === 0 && rearPhoto && (
+                            <span className="absolute bottom-0 left-0 right-0 text-[8px] font-semibold text-white bg-black/50 text-center py-0.5 uppercase tracking-wide">
+                              Scan
+                            </span>
+                          )}
+                        </div>
+                      );
+                    })}
+                    {canAdd && (
+                      <>
+                        {/* Hidden input — sits outside the button to avoid iOS hidden-label issues */}
+                        <input
+                          ref={el => { zoneInputRefs.current[section] = el; }}
+                          type="file"
+                          accept="image/*"
+                          onChange={(e) => handlePhotoCapture(e, section as keyof typeof photos)}
+                          className="hidden"
+                        />
+                        <button
+                          type="button"
+                          onClick={() => zoneInputRefs.current[section]?.click()}
+                          className="aspect-square rounded-xl border-2 border-dashed border-border/60 flex flex-col items-center justify-center hover:border-accent/50 hover:bg-accent/5 transition-all duration-300 group"
+                        >
+                          <Camera className="w-5 h-5 text-muted-foreground/50 group-hover:text-accent transition-colors" />
+                          <span className="text-[9px] text-muted-foreground/50 mt-1 group-hover:text-accent transition-colors">Add</span>
+                        </button>
+                      </>
+                    )}
+                  </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
 
             <div className="space-y-4 pt-4 border-t border-border/60">
               <div className="space-y-2">
@@ -565,7 +726,7 @@ export default function VehicleRegisterPage() {
                   setStep((step + 1) as Step);
                 }
               }}
-              disabled={!canProceed() || submitting}
+              disabled={!canProceed() || submitting || (step === 1 && aiAnalyzing)}
               className="w-full h-13 btn-dark rounded-xl text-base font-semibold"
             >
               {step === 3 ? (

@@ -179,15 +179,16 @@ export default function CheckInPage() {
       const timestamp = new Date().toISOString();
       const eventId = `evt_${Date.now()}_${Math.random().toString(36).substr(2, 9)}`;
 
-      // Update vehicle status via API
-      await carsApi.update(vehicle.id, vehicleToCarUpdate({ status: 'in_storage', statusUpdatedAt: timestamp }, undefined));
+      // Update vehicle status via API — pass full vehicle so existing extras (color,
+      // registrationCompleted, notes) are preserved in the nickname JSON field.
+      await carsApi.update(vehicle.id, vehicleToCarUpdate({ ...vehicle, status: 'in_storage', statusUpdatedAt: timestamp }));
 
       // Create vehicle event
       const newEvent: VehicleEvent = {
         id: eventId,
         eventType: 'arrival_after_use',
         vehicleId: vehicle.id,
-        facilityId: vehicle.facilityId,
+        facilityId: vehicle.facilityId || currentUser.facilityId,
         staffUserId: currentUser.id,
         timestamp: timestamp,
         damagesCaptured: allDamages.map(d => d.part),
@@ -303,7 +304,7 @@ export default function CheckInPage() {
 
             {canCheckIn ? (
               <Button onClick={() => setStep('car-layout')} className="w-full btn-dark">
-                Continue to Damage Inspection
+                Continue to Condition Record
               </Button>
             ) : (
               <Button onClick={() => router.push(`/vehicles/${vehicle.id}`)} variant="outline" className="w-full">
@@ -326,8 +327,8 @@ export default function CheckInPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div className="flex-1">
-              <h1 className="font-semibold">Damage Inspection</h1>
-              <p className="text-sm text-white/70">Step 2 of 3 — Select damaged parts</p>
+              <h1 className="font-semibold">Entry Condition</h1>
+              <p className="text-sm text-white/70">Step 2 of 3 — Record vehicle condition</p>
             </div>
           </div>
         </header>
@@ -370,13 +371,11 @@ export default function CheckInPage() {
           </div>
 
           <div className="space-y-2">
-            <h3 className="text-sm font-medium text-muted-foreground uppercase tracking-wide">
-              Selected Parts ({selectedParts.length})
-            </h3>
-            {selectedParts.length === 0 ? (
-              <p className="text-sm text-muted-foreground">No damages selected — tap a point on the diagram to mark damage</p>
-            ) : (
-              <div className="flex flex-wrap gap-2">
+            <p className="text-xs text-muted-foreground">
+              Tap a point to document damage. Leave blank if the vehicle is in good condition — this record is for reference only.
+            </p>
+            {selectedParts.length > 0 && (
+              <div className="flex flex-wrap gap-2 pt-1">
                 {selectedParts.map(partId => {
                   const part = CAR_PARTS.find(p => p.id === partId);
                   return (
@@ -390,7 +389,7 @@ export default function CheckInPage() {
           </div>
 
           <Button onClick={() => setStep('review')} className="w-full btn-dark">
-            {selectedParts.length === 0 ? 'Complete Check-In (No Damages)' : 'Review & Complete'}
+            {selectedParts.length === 0 ? 'Continue — No Issues Found' : 'Review & Complete'}
           </Button>
         </div>
       </div>
@@ -409,7 +408,7 @@ export default function CheckInPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-semibold">Document Damage</h1>
+              <h1 className="font-semibold">Document Condition</h1>
               <p className="text-sm text-white/70">{part?.label}</p>
             </div>
           </div>
@@ -464,7 +463,7 @@ export default function CheckInPage() {
             </Button>
             <div>
               <h1 className="font-semibold">Review Check-In</h1>
-              <p className="text-sm text-white/70">Step 3 of 3 — {allDamages.length} damage(s) recorded</p>
+              <p className="text-sm text-white/70">Step 3 of 3 — {allDamages.length === 0 ? 'No issues' : `${allDamages.length} issue(s) noted`}</p>
             </div>
           </div>
         </header>
@@ -475,7 +474,7 @@ export default function CheckInPage() {
           {allDamages.length === 0 && (
             <div className="card-premium p-5 text-center text-muted-foreground">
               <Check className="w-8 h-8 text-success mx-auto mb-2" />
-              <p className="text-sm font-medium">No damages recorded</p>
+              <p className="text-sm font-medium">Good condition — no issues noted</p>
               <p className="text-xs mt-1">Vehicle will be checked in clean.</p>
             </div>
           )}

@@ -31,14 +31,18 @@ export default function DashboardPage() {
     const now = new Date();
     const yesterday = new Date(now.getTime() - 24 * 60 * 60 * 1000);
     
+    // If currentFacility is empty (mismatch on first load), show all events
+    const matchesFacility = (facilityId: string) =>
+      !currentFacility || facilityId === currentFacility;
+
     const checkIns24h = store.vehicleEvents.filter(
-      e => e.facilityId === currentFacility && 
+      e => matchesFacility(e.facilityId) &&
            e.eventType === 'arrival_after_use' &&
            new Date(e.timestamp) > yesterday
     ).length;
-    
+
     const checkOuts24h = store.vehicleEvents.filter(
-      e => e.facilityId === currentFacility && 
+      e => matchesFacility(e.facilityId) &&
            e.eventType === 'departure_after_use' &&
            new Date(e.timestamp) > yesterday
     ).length;
@@ -69,9 +73,9 @@ export default function DashboardPage() {
 
   const facility = store.facilities.find(f => f.id === currentFacility);
   const recentEvents = store.vehicleEvents
-    .filter(e => e.facilityId === currentFacility)
+    .filter(e => !currentFacility || e.facilityId === currentFacility)
     .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())
-    .slice(0, 10);
+    .slice(0, 5);
 
   const occupancyPercent = kpis.facilityCapacity > 0
     ? Math.round((kpis.totalOccupancy / kpis.facilityCapacity) * 100)

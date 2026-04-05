@@ -5,7 +5,14 @@
       "Bash(find C:UserscobenOneDriveDesktopGarageversion1Sof/src -type f -name *.json -o -name *.js -o -name *.jsx -o -name *.ts -o -name *.tsx -o -name *.md)",
       "Bash(grep -E \"\\\\.ts$\")",
       "WebFetch(domain:52.90.109.124)",
-      "Bash(curl -s http://52.90.109.124:8001/openapi.json)"
+      "Bash(curl -s http://52.90.109.124:8001/openapi.json)",
+      "Bash(curl -s -X POST \"http://34.233.63.96:8001/aicard/openai/details\" -F \"upload=@/dev/null\")",
+      "Bash(curl -s \"http://34.233.63.96:8001/openapi.json\")",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); paths={k:v for k,v in d.get\\('paths',{}\\).items\\(\\) if 'aicard' in k.lower\\(\\)}; print\\(json.dumps\\(paths, indent=2\\)\\)\")",
+      "Bash(curl:*)",
+      "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); const paths=Object.entries\\(d.paths||{}\\).filter\\(\\([k]\\)=>k.includes\\('aicard'\\)\\); console.log\\(JSON.stringify\\(Object.fromEntries\\(paths\\),null,2\\)\\)\")",
+      "Bash(node -e \"const d=require\\('C:/Users/coben/AppData/Local/Temp/openapi.json'\\); const paths=Object.entries\\(d.paths||{}\\).filter\\(\\([k]\\)=>k.toLowerCase\\(\\).includes\\('aicard'\\)\\); console.log\\(JSON.stringify\\(Object.fromEntries\\(paths\\),null,2\\)\\)\")",
+      "Bash(node:*)"
     ]
   }
 }

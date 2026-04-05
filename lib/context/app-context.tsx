@@ -61,6 +61,19 @@ interface AppContextType {
 
 const AppContext = createContext<AppContextType | undefined>(undefined);
 
+// ─── Route backend survey photo URLs through Next.js proxy on the client ──────
+// Avoids Mixed Content (HTTP image on HTTPS page) on Safari/iOS.
+const BACKEND_ORIGIN = 'http://34.233.63.96:8001';
+function formatSurveyPhotoUrl(path: string): string {
+  if (typeof window === 'undefined') return path; // SSR: fine to use direct
+  if (!path || path.startsWith('data:')) return path;
+  if (path.startsWith(BACKEND_ORIGIN)) {
+    return '/api/proxy/' + path.slice(BACKEND_ORIGIN.length).replace(/^\//, '');
+  }
+  if (path.startsWith('http')) return path; // external domain, leave as-is
+  return '/api/proxy/' + path.replace(/^\//, '');
+}
+
 // ─── Helpers ──────────────────────────────────────────────────────────────────
 
 function emptyStore(): AppStore {
@@ -133,7 +146,6 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
         // Background fetch for authenticated backend photos
         surveyCarsApi.list().then(surveyCarsData => {
-          const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.BACKEND_URL ?? 'http://52.90.109.124:8001');
           setStore(currentStore => {
             if (!currentStore) return currentStore;
             return {
@@ -142,15 +154,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
                 const apiPhotos = (surveyCarsData as any[]).filter((sc: any) => sc.car_id === v.id);
                 // Only override if we don't have local photos and API photos exist
                 if (!localPhotos[v.id] && apiPhotos.length > 0) {
-                  const formatPath = (path: string) => path.startsWith('http') ? path : `${BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+                  const validUrl = (sc: any) => sc.file_url && sc.file_url !== 'string';
+                  const byPos = (pos: string) => apiPhotos.filter((sc: any) => sc.view_position === pos && validUrl(sc)).map((sc: any) => formatSurveyPhotoUrl(sc.file_url));
                   return {
                     ...v,
                     initialDocumentation: {
-                      frontExterior: apiPhotos.filter((sc: any) => sc.view_position === 'frontExterior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                      rearExterior: apiPhotos.filter((sc: any) => sc.view_position === 'rearExterior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                      leftSide: apiPhotos.filter((sc: any) => sc.view_position === 'leftSide' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                      rightSide: apiPhotos.filter((sc: any) => sc.view_position === 'rightSide' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                      interior: apiPhotos.filter((sc: any) => sc.view_position === 'interior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
+                      frontExterior: byPos('frontExterior'),
+                      rearExterior: byPos('rearExterior'),
+                      leftSide: byPos('leftSide'),
+                      rightSide: byPos('rightSide'),
+                      interior: byPos('interior'),
                     }
                   };
                 }
@@ -272,12 +285,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
 
       // Background fetch for survey photos
       surveyCarsApi.list().then(surveyCarsData => {
-        const BASE_URL = typeof window !== 'undefined' ? '' : (process.env.BACKEND_URL ?? 'http://52.90.109.124:8001');
         let localPhotos: Record<string, any> = {};
         if (typeof window !== 'undefined') {
           try { localPhotos = JSON.parse(localStorage.getItem('GF_VEHICLE_PHOTOS') || '{}'); } catch {}
         }
-        
+
         setStore(prev => {
           if (!prev) return prev;
           return {
@@ -285,15 +297,16 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             vehicles: prev.vehicles.map(v => {
               const apiPhotos = (surveyCarsData as any[]).filter((sc: any) => sc.car_id === v.id);
               if (!localPhotos[v.id] && apiPhotos.length > 0) {
-                const formatPath = (path: string) => path.startsWith('http') ? path : `${BASE_URL.replace(/\/$/, '')}/${path.replace(/^\//, '')}`;
+                const validUrl = (sc: any) => sc.file_url && sc.file_url !== 'string';
+                const byPos = (pos: string) => apiPhotos.filter((sc: any) => sc.view_position === pos && validUrl(sc)).map((sc: any) => formatSurveyPhotoUrl(sc.file_url));
                 return {
                   ...v,
                   initialDocumentation: {
-                    frontExterior: apiPhotos.filter((sc: any) => sc.view_position === 'frontExterior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                    rearExterior: apiPhotos.filter((sc: any) => sc.view_position === 'rearExterior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                    leftSide: apiPhotos.filter((sc: any) => sc.view_position === 'leftSide' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                    rightSide: apiPhotos.filter((sc: any) => sc.view_position === 'rightSide' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
-                    interior: apiPhotos.filter((sc: any) => sc.view_position === 'interior' && sc.file_url && sc.file_url !== 'string').map((sc: any) => formatPath(sc.file_url)),
+                    frontExterior: byPos('frontExterior'),
+                    rearExterior: byPos('rearExterior'),
+                    leftSide: byPos('leftSide'),
+                    rightSide: byPos('rightSide'),
+                    interior: byPos('interior'),
                   }
                 };
               }

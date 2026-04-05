@@ -1,7 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server';
 
 // This runs on the server, so HTTP → backend is fine (no Mixed Content)
-const BACKEND_URL = process.env.BACKEND_URL ?? 'http://52.90.109.124:8001';
+const BACKEND_URL = process.env.BACKEND_URL ?? 'http://34.233.63.96:8001';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
   const { path } = await params;
@@ -39,15 +39,11 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
 
   let body: BodyInit | undefined;
   if (!['GET', 'HEAD'].includes(req.method)) {
-    const contentType = req.headers.get('content-type') ?? '';
-    if (contentType.includes('multipart/form-data')) {
-      body = await req.formData();
-      // Let fetch handle Content-Type with boundary for FormData
-      delete forwardHeaders['content-type'];
-    } else {
-      const text = await req.text();
-      body = text || undefined;
-    }
+    // Stream the raw bytes — do NOT parse multipart/form-data and re-encode it.
+    // Parsing changes the boundary, which causes "error parsing the body" on the backend.
+    // Keep the original Content-Type header so the backend sees the correct boundary.
+    const raw = await req.arrayBuffer();
+    body = raw.byteLength > 0 ? raw : undefined;
   }
 
   try {

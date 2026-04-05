@@ -39,8 +39,8 @@ export function carToVehicle(car: CarRead, defaultFacilityId?: string): Vehicle 
     vin: car.vin || '',
     status: (car.location as VehicleStatus) || 'checked_out',
     statusUpdatedAt: extra.statusUpdatedAt || new Date().toISOString(),
-    registrationExpDate: car.registration_date,
-    insuranceExpDate: car.insurance_date,
+    registrationExpDate: car.registration_date?.split('T')[0],
+    insuranceExpDate: car.insurance_date?.split('T')[0],
     initialDocumentation: extra.initialDocumentation ?? {
       frontExterior: [],
       rearExterior: [],
