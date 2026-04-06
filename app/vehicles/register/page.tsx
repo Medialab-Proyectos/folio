@@ -60,6 +60,30 @@ export default function VehicleRegisterPage() {
     return null;
   }
 
+  // Resize image to max 1200px and compress to ~80% JPEG before AI analysis.
+  // Reduces payload from ~4MB (camera) to ~200-400KB, cutting backend response time significantly.
+  const resizeForAI = (file: File): Promise<File> =>
+    new Promise((resolve) => {
+      const img = new Image();
+      const url = URL.createObjectURL(file);
+      img.onload = () => {
+        URL.revokeObjectURL(url);
+        const MAX = 1200;
+        const scale = Math.min(1, MAX / Math.max(img.width, img.height));
+        const canvas = document.createElement('canvas');
+        canvas.width = Math.round(img.width * scale);
+        canvas.height = Math.round(img.height * scale);
+        canvas.getContext('2d')!.drawImage(img, 0, 0, canvas.width, canvas.height);
+        canvas.toBlob(
+          (blob) => resolve(blob ? new File([blob], file.name, { type: 'image/jpeg' }) : file),
+          'image/jpeg',
+          0.82,
+        );
+      };
+      img.onerror = () => { URL.revokeObjectURL(url); resolve(file); };
+      img.src = url;
+    });
+
   const handlePhotoCapture = (e: React.ChangeEvent<HTMLInputElement>, section?: keyof typeof photos) => {
     const file = e.target.files?.[0];
     if (!file) return;
@@ -88,7 +112,7 @@ export default function VehicleRegisterPage() {
       setAiAnalyzing(true);
       setAiDetected(null);
       setAiError(null);
-      aicardApi.analyze(file)
+      resizeForAI(file).then(compressed => aicardApi.analyze(compressed))
         .then(result => {
           if (!result) {
             setAiDetected(false);

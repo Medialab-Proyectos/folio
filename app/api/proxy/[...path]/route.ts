@@ -1,5 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server';
 
+// Allow up to 60s — AI image analysis endpoints can be slow
+export const maxDuration = 60;
+
 // This runs on the server, so HTTP → backend is fine (no Mixed Content)
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://34.233.63.96:8001';
 
@@ -43,7 +46,9 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
     // Parsing changes the boundary, which causes "error parsing the body" on the backend.
     // Keep the original Content-Type header so the backend sees the correct boundary.
     const raw = await req.arrayBuffer();
-    body = raw.byteLength > 0 ? raw : undefined;
+    // Buffer.from() copies the bytes — avoids "detached ArrayBuffer" error in Vercel's
+    // Node.js runtime when fetch() tries to slice the same buffer internally.
+    body = raw.byteLength > 0 ? Buffer.from(raw) : undefined;
   }
 
   try {
