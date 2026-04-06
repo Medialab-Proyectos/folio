@@ -22,48 +22,51 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 }
 
 /**
- * Safely read the full request body into a fresh Uint8Array.
+ * Read the request body stream into a Blob that is safe to hand to fetch().
  *
- * We **copy** every chunk the moment we receive it so that even runtimes which
- * detach or recycle the backing ArrayBuffer between reads cannot affect us.
- * The final concatenation produces a brand-new Uint8Array whose ArrayBuffer is
- * entirely owned by us — safe to pass to fetch(), Buffer.from(), etc.
+ * WHY:
+ * In Vercel's serverless runtime, Node.js built-in fetch (undici) internally
+ * calls `ArrayBuffer.prototype.slice()` when the body is a Uint8Array, Buffer,
+ * or ArrayBuffer.  If the runtime has detached (transferred) the backing
+ * ArrayBuffer, this throws:
+ *
+ *   "Cannot perform ArrayBuffer.prototype.slice on a detached ArrayBuffer"
+ *
+ * Blob bodies follow a completely different code path inside undici — the data
+ * is read via Blob.stream() and never touches ArrayBuffer.prototype.slice.
+ *
+ * We read the incoming stream chunk-by-chunk (so we never call
+ * req.arrayBuffer()), immediately copy each chunk into a private Uint8Array,
+ * and wrap the result in a Blob.  The Blob makes its own internal copy of the
+ * data, so nothing can be detached.
  */
-async function safeReadBody(
+async function readBodyAsBlob(
   stream: ReadableStream<Uint8Array> | null,
-): Promise<Uint8Array | undefined> {
+): Promise<Blob | undefined> {
   if (!stream) return undefined;
 
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
-  let totalLength = 0;
 
   try {
     for (;;) {
       const { done, value } = await reader.read();
       if (done) break;
       if (value && value.byteLength > 0) {
-        // Immediately copy into a private buffer so no runtime can reclaim it
+        // Copy immediately — the runtime can detach `value`'s buffer at any time
         const copy = new Uint8Array(value.byteLength);
         copy.set(value);
         chunks.push(copy);
-        totalLength += copy.byteLength;
       }
     }
   } finally {
     reader.releaseLock();
   }
 
-  if (totalLength === 0) return undefined;
+  if (chunks.length === 0) return undefined;
 
-  // Single contiguous Uint8Array — NOT a Buffer (avoids detachable AB issues)
-  const result = new Uint8Array(totalLength);
-  let offset = 0;
-  for (const chunk of chunks) {
-    result.set(chunk, offset);
-    offset += chunk.byteLength;
-  }
-  return result;
+  // Blob copies the data internally — safe from detachment forever
+  return new Blob(chunks);
 }
 
 async function proxyRequest(req: NextRequest, pathSegments: string[]) {
@@ -77,24 +80,21 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
     }
   });
 
-  // ── Read incoming request body safely ───────────────────────────────────
-  let body: Uint8Array | undefined;
+  // ── Read incoming request body safely into a Blob ───────────────────────
+  let body: Blob | undefined;
   if (!['GET', 'HEAD'].includes(req.method)) {
-    body = await safeReadBody(req.body);
+    body = await readBodyAsBlob(req.body);
   }
 
   try {
     const backendRes = await fetch(targetUrl, {
       method: req.method,
       headers: forwardHeaders,
+      // Blob body avoids undici's ArrayBuffer.slice() code path entirely
       body,
-      // @ts-expect-error — duplex required by Node 18+ when body is present
-      duplex: 'half',
     });
 
     // ── Stream backend response directly — no arrayBuffer() call ──────────
-    // Passing the response body stream straight to NextResponse avoids
-    // materializing any ArrayBuffer on the response path.
     const resHeaders = new Headers();
     backendRes.headers.forEach((value, key) => {
       if (!['transfer-encoding', 'connection'].includes(key.toLowerCase())) {
