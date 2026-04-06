@@ -149,6 +149,13 @@ export default function VehicleDetailPage() {
     }
   };
 
+  const docs = vehicle.initialDocumentation;
+  const mainPhoto = docs?.frontExterior?.find(p => p && p !== 'string')
+    || docs?.rearExterior?.find(p => p && p !== 'string')
+    || docs?.leftSide?.find(p => p && p !== 'string')
+    || docs?.rightSide?.find(p => p && p !== 'string')
+    || docs?.interior?.find(p => p && p !== 'string');
+
   return (
     <div className="min-h-screen pb-8 bg-background">
       {/* Header */}
@@ -177,9 +184,9 @@ export default function VehicleDetailPage() {
       {/* Vehicle Image */}
       <div className="w-full bg-muted/50 border-b border-border/40 flex justify-center">
         <div className="relative w-full max-w-2xl aspect-[16/9] sm:aspect-[21/9] overflow-hidden">
-          {vehicle.initialDocumentation?.frontExterior?.[0] && vehicle.initialDocumentation.frontExterior[0] !== 'string' ? (
+          {mainPhoto ? (
             <img
-              src={vehicle.initialDocumentation.frontExterior[0].startsWith('/') || vehicle.initialDocumentation.frontExterior[0].startsWith('http') || vehicle.initialDocumentation.frontExterior[0].startsWith('data:') ? vehicle.initialDocumentation.frontExterior[0] : `data:image/jpeg;base64,${vehicle.initialDocumentation.frontExterior[0]}`}
+              src={mainPhoto.startsWith('/') || mainPhoto.startsWith('http') || mainPhoto.startsWith('data:') ? mainPhoto : `data:image/jpeg;base64,${mainPhoto}`}
               alt={`${vehicle.make} ${vehicle.model}`}
               className="w-full h-full object-contain bg-black/90"
             />

@@ -143,7 +143,13 @@ export default function VehiclesPage() {
           vehicles.map((vehicle, idx) => {
             const client = getClient(vehicle.clientId);
             const damages = store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open');
-            
+            const docs = vehicle.initialDocumentation;
+            const mainPhoto = docs?.frontExterior?.find(p => p && p !== 'string')
+              || docs?.rearExterior?.find(p => p && p !== 'string')
+              || docs?.leftSide?.find(p => p && p !== 'string')
+              || docs?.rightSide?.find(p => p && p !== 'string')
+              || docs?.interior?.find(p => p && p !== 'string');
+
             return (
               <Link
                 key={vehicle.id}
@@ -153,9 +159,9 @@ export default function VehiclesPage() {
               >
                 {/* Vehicle Image */}
                 <div className="relative w-full aspect-[16/9] bg-muted overflow-hidden">
-                  {vehicle.initialDocumentation?.frontExterior?.[0] && vehicle.initialDocumentation.frontExterior[0] !== 'string' ? (
+                  {mainPhoto ? (
                     <img
-                      src={vehicle.initialDocumentation.frontExterior[0].startsWith('/') || vehicle.initialDocumentation.frontExterior[0].startsWith('http') || vehicle.initialDocumentation.frontExterior[0].startsWith('data:') ? vehicle.initialDocumentation.frontExterior[0] : `data:image/jpeg;base64,${vehicle.initialDocumentation.frontExterior[0]}`}
+                      src={mainPhoto.startsWith('/') || mainPhoto.startsWith('http') || mainPhoto.startsWith('data:') ? mainPhoto : `data:image/jpeg;base64,${mainPhoto}`}
                       alt={`${vehicle.make} ${vehicle.model}`}
                       className="w-full h-full object-cover transition-transform duration-500 group-hover:scale-105"
                     />
