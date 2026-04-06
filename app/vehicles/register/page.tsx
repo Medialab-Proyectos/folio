@@ -82,9 +82,9 @@ export default function VehicleRegisterPage() {
     };
     reader.readAsDataURL(file);
 
-    // AI analysis only for the initial capture (step 0) — runs in background.
+    // AI analysis for the main vehicle photo (step 0 or step 1) — runs in background.
     // Uses /aicard/ (basic endpoint, returns: brand, model, year, color, plate).
-    if (step === 0) {
+    if ((step === 0 || step === 1) && !section) {
       setAiAnalyzing(true);
       setAiDetected(null);
       setAiError(null);
@@ -93,6 +93,7 @@ export default function VehicleRegisterPage() {
           if (!result) {
             setAiDetected(false);
             setAiError('No vehicle detected. Please fill in the details manually.');
+            setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
             return;
           }
           // AICardBasicResponse fields: brand, model, year, color, plate
@@ -110,12 +111,14 @@ export default function VehicleRegisterPage() {
           } else {
             setAiDetected(false);
             setAiError('Could not read vehicle details. Please fill in manually.');
+            setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
           }
         })
         .catch((err: unknown) => {
           setAiDetected(false);
           const msg = err instanceof Error ? err.message : 'AI analysis unavailable.';
           setAiError(msg);
+          setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
         })
         .finally(() => setAiAnalyzing(false));
     }
@@ -273,9 +276,15 @@ export default function VehicleRegisterPage() {
               />
               <Button onClick={() => fileInputRef.current?.click()} className="w-full h-14 btn-dark rounded-xl text-base font-semibold">
                 <Camera className="w-5 h-5 mr-2" />
-                Take Photo
+                Take Photo of Your Car
               </Button>
-              <Button variant="outline" onClick={() => setStep(1)} className="w-full h-14 rounded-xl text-base font-medium border-2 hover:border-accent/50 transition-all">
+              <Button variant="outline" onClick={() => {
+                setRearPhoto(null);
+                setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
+                setAiDetected(null);
+                setAiError(null);
+                setStep(1);
+              }} className="w-full h-14 rounded-xl text-base font-medium border-2 hover:border-accent/50 transition-all">
                 Add Manually
               </Button>
             </div>
@@ -333,7 +342,7 @@ export default function VehicleRegisterPage() {
                 className="w-full rounded-xl border-2 border-dashed border-border/60 h-12 flex items-center justify-center gap-2 hover:border-accent/50 hover:bg-accent/5 transition-all text-sm font-medium text-muted-foreground"
               >
                 <Camera className="w-4 h-4" />
-                Add Rear Photo
+                Choose from gallery
               </button>
             )}
 

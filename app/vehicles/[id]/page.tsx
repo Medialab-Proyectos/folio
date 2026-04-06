@@ -330,7 +330,8 @@ export default function VehicleDetailPage() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Registration Exp.</p>
                 {(() => {
                   const d = new Date(vehicle.registrationExpDate!);
-                  const expired = d < new Date();
+                  const t = new Date(); const todayStr = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+                  const expired = vehicle.registrationExpDate! < todayStr;
                   return (
                     <p className={`text-sm font-medium flex items-center gap-1 ${expired ? 'text-destructive' : ''}`}>
                       {expired && <AlertCircle className="w-3 h-3 flex-shrink-0" />}
@@ -345,7 +346,8 @@ export default function VehicleDetailPage() {
                 <p className="text-[10px] text-muted-foreground uppercase tracking-wider font-semibold">Insurance Exp.</p>
                 {(() => {
                   const d = new Date(vehicle.insuranceExpDate!);
-                  const expired = d < new Date();
+                  const t = new Date(); const todayStr = `${t.getFullYear()}-${String(t.getMonth()+1).padStart(2,'0')}-${String(t.getDate()).padStart(2,'0')}`;
+                  const expired = vehicle.insuranceExpDate! < todayStr;
                   return (
                     <p className={`text-sm font-medium flex items-center gap-1 ${expired ? 'text-destructive' : ''}`}>
                       {expired && <AlertCircle className="w-3 h-3 flex-shrink-0" />}
