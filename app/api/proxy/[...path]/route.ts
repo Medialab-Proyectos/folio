@@ -3,10 +3,6 @@ import { NextRequest, NextResponse } from 'next/server';
 // Allow up to 60s — AI image analysis endpoints can be slow
 export const maxDuration = 60;
 
-// Vercel serverless body-size limit — raise to 10 MB (default is 4.5 MB).
-// This config is respected by the App Router runtime.
-export const bodyParserSizeLimit = '10mb';
-
 const BACKEND_URL = process.env.BACKEND_URL ?? 'http://34.233.63.96:8001';
 
 export async function GET(req: NextRequest, { params }: { params: Promise<{ path: string[] }> }) {
@@ -26,24 +22,17 @@ export async function DELETE(req: NextRequest, { params }: { params: Promise<{ p
 }
 
 /**
- * Safely drain a ReadableStream into a freshly-allocated Uint8Array.
+ * Safely read the full request body into a fresh Uint8Array.
  *
- * WHY:
- * In Vercel's Node.js serverless runtime the ArrayBuffer returned by
- * req.arrayBuffer() / res.arrayBuffer() is *transferred* (detached) by the
- * runtime shortly after the await resolves.  Any later .slice(), Buffer.from(),
- * or fetch() internals that touch it throw:
- *
- *   "Cannot perform ArrayBuffer.prototype.slice on a detached ArrayBuffer"
- *
- * Reading via getReader() yields independent Uint8Array chunks whose backing
- * memory is never detached.  We concatenate them into a *new* Uint8Array that
- * is entirely under our control.
+ * We **copy** every chunk the moment we receive it so that even runtimes which
+ * detach or recycle the backing ArrayBuffer between reads cannot affect us.
+ * The final concatenation produces a brand-new Uint8Array whose ArrayBuffer is
+ * entirely owned by us — safe to pass to fetch(), Buffer.from(), etc.
  */
-async function drainStream(
+async function safeReadBody(
   stream: ReadableStream<Uint8Array> | null,
-): Promise<Uint8Array | null> {
-  if (!stream) return null;
+): Promise<Uint8Array | undefined> {
+  if (!stream) return undefined;
 
   const reader = stream.getReader();
   const chunks: Uint8Array[] = [];
@@ -54,18 +43,20 @@ async function drainStream(
       const { done, value } = await reader.read();
       if (done) break;
       if (value && value.byteLength > 0) {
-        chunks.push(value);
-        totalLength += value.byteLength;
+        // Immediately copy into a private buffer so no runtime can reclaim it
+        const copy = new Uint8Array(value.byteLength);
+        copy.set(value);
+        chunks.push(copy);
+        totalLength += copy.byteLength;
       }
     }
   } finally {
     reader.releaseLock();
   }
 
-  if (totalLength === 0) return null;
+  if (totalLength === 0) return undefined;
 
-  // Build a single contiguous Uint8Array (NOT a Buffer, which wraps an
-  // ArrayBuffer that some runtimes may detach when handed to fetch()).
+  // Single contiguous Uint8Array — NOT a Buffer (avoids detachable AB issues)
   const result = new Uint8Array(totalLength);
   let offset = 0;
   for (const chunk of chunks) {
@@ -87,26 +78,23 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
   });
 
   // ── Read incoming request body safely ───────────────────────────────────
-  let body: Uint8Array | null = null;
+  let body: Uint8Array | undefined;
   if (!['GET', 'HEAD'].includes(req.method)) {
-    body = await drainStream(req.body);
+    body = await safeReadBody(req.body);
   }
 
   try {
     const backendRes = await fetch(targetUrl, {
       method: req.method,
       headers: forwardHeaders,
-      // Passing Uint8Array is safe in all runtimes; avoid Buffer which may
-      // reference a detachable ArrayBuffer.
-      body: body ?? undefined,
-      // @ts-expect-error — duplex is required for streaming request bodies in
-      // some edge-runtime versions, harmless in Node.js runtime.
+      body,
+      // @ts-expect-error — duplex required by Node 18+ when body is present
       duplex: 'half',
     });
 
-    // ── Read backend response body safely ─────────────────────────────────
-    const resBody = await drainStream(backendRes.body);
-
+    // ── Stream backend response directly — no arrayBuffer() call ──────────
+    // Passing the response body stream straight to NextResponse avoids
+    // materializing any ArrayBuffer on the response path.
     const resHeaders = new Headers();
     backendRes.headers.forEach((value, key) => {
       if (!['transfer-encoding', 'connection'].includes(key.toLowerCase())) {
@@ -114,7 +102,7 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
       }
     });
 
-    return new NextResponse(resBody, {
+    return new NextResponse(backendRes.body, {
       status: backendRes.status,
       headers: resHeaders,
     });
