@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useApp } from '@/lib/context/app-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Check, AlertCircle, Car, User, ClipboardList, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Images, Shield } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle, Car, User, ClipboardList, ChevronDown, ChevronUp, AlertTriangle, CheckCircle2, Images, Shield, Home } from 'lucide-react';
 import { Vehicle, VehicleEvent, Damage } from '@/lib/types';
 import PhotoCapture from '@/components/shared/photo-capture';
 import { carsApi } from '@/lib/api/cars';
@@ -290,8 +290,12 @@ export default function CheckOutPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/check-out')}>
-            Return to Check-Out List
+          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/')}>
+            <Home className="w-4 h-4 mr-2" />
+            Return to Home
+          </Button>
+          <Button variant="outline" className="w-full h-12" onClick={() => router.push('/check-out')}>
+            Check-Out List
           </Button>
           <Button variant="ghost" className="w-full h-12" onClick={() => router.push(`/vehicles/${vehicle.id}`)}>
             View Vehicle Details

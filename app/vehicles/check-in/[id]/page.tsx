@@ -5,7 +5,7 @@ import { useRouter, useParams } from 'next/navigation';
 import { useApp } from '@/lib/context/app-context';
 import { Button } from '@/components/ui/button';
 import { Textarea } from '@/components/ui/textarea';
-import { ArrowLeft, Check, AlertCircle, Car, User, ChevronDown, ChevronUp, Images } from 'lucide-react';
+import { ArrowLeft, Check, AlertCircle, Car, User, ChevronDown, ChevronUp, Images, Home } from 'lucide-react';
 import { Vehicle, Damage, VehicleEvent } from '@/lib/types';
 import PhotoCapture from '@/components/shared/photo-capture';
 import { carsApi } from '@/lib/api/cars';
@@ -535,8 +535,12 @@ export default function CheckInPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/check-in')}>
-            Return to Check-In List
+          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/')}>
+            <Home className="w-4 h-4 mr-2" />
+            Return to Home
+          </Button>
+          <Button variant="outline" className="w-full h-12" onClick={() => router.push('/check-in')}>
+            Check-In List
           </Button>
           <Button variant="ghost" className="w-full h-12" onClick={() => router.push(`/vehicles/${vehicle.id}`)}>
             View Vehicle Details
