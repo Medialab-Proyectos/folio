@@ -32,7 +32,7 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
   const search = req.nextUrl.search;
   const targetUrl = `${BACKEND_URL}/${path}${search}`;
 
-  // Forward relevant headers, strip host
+  // Forward relevant headers, strip hop-by-hop headers
   const forwardHeaders: Record<string, string> = {};
   req.headers.forEach((value, key) => {
     if (!['host', 'connection', 'transfer-encoding'].includes(key.toLowerCase())) {
@@ -42,13 +42,13 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
 
   let body: BodyInit | undefined;
   if (!['GET', 'HEAD'].includes(req.method)) {
-    // Stream the raw bytes — do NOT parse multipart/form-data and re-encode it.
-    // Parsing changes the boundary, which causes "error parsing the body" on the backend.
-    // Keep the original Content-Type header so the backend sees the correct boundary.
+    // Read into Uint8Array — avoids the "detached ArrayBuffer" error that occurs in
+    // Vercel's Node.js runtime when an ArrayBuffer (or Buffer wrapping one) is passed
+    // directly to fetch(). Uint8Array owns its bytes independently and is safe to pass.
     const raw = await req.arrayBuffer();
-    // Buffer.from() copies the bytes — avoids "detached ArrayBuffer" error in Vercel's
-    // Node.js runtime when fetch() tries to slice the same buffer internally.
-    body = raw.byteLength > 0 ? Buffer.from(raw) : undefined;
+    if (raw.byteLength > 0) {
+      body = new Uint8Array(raw.slice(0));
+    }
   }
 
   try {
@@ -56,6 +56,8 @@ async function proxyRequest(req: NextRequest, pathSegments: string[]) {
       method: req.method,
       headers: forwardHeaders,
       body,
+      // @ts-expect-error — Node 18 fetch supports duplex for streaming bodies
+      duplex: 'half',
     });
 
     const resHeaders = new Headers();
