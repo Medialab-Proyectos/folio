@@ -12,6 +12,7 @@ const config: Config = {
     extend: {
       fontFamily: {
         sans: ['var(--font-sans)', 'system-ui', 'sans-serif'],
+        nunito: ['var(--font-nunito)', 'sans-serif'],
       },
       colors: {
         success: {

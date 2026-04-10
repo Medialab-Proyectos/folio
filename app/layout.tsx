@@ -1,12 +1,18 @@
 import type { Metadata } from 'next'
-import { Inter } from 'next/font/google'
+import { Inter, Nunito } from 'next/font/google'
 import './globals.css'
 import { AppProvider } from '@/lib/context/app-context'
 import { StorageMigrator } from '@/components/shared/storage-migrator'
 
-const inter = Inter({ 
+const inter = Inter({
   subsets: ['latin'],
   variable: '--font-sans',
+})
+
+const nunito = Nunito({
+  subsets: ['latin'],
+  variable: '--font-nunito',
+  weight: ['400', '600', '700'],
 })
 
 export const metadata: Metadata = {
@@ -22,7 +28,7 @@ export default function RootLayout({
 }>) {
   return (
     <html lang="en" suppressHydrationWarning>
-      <body className={`${inter.variable} font-sans antialiased`}>
+      <body className={`${inter.variable} ${nunito.variable} font-sans antialiased`}>
         <StorageMigrator />
         <AppProvider>
           {children}

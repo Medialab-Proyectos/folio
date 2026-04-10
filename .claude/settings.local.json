@@ -12,7 +12,13 @@
       "Bash(curl:*)",
       "Bash(node -e \"const d=JSON.parse\\(require\\('fs'\\).readFileSync\\('/dev/stdin','utf8'\\)\\); const paths=Object.entries\\(d.paths||{}\\).filter\\(\\([k]\\)=>k.includes\\('aicard'\\)\\); console.log\\(JSON.stringify\\(Object.fromEntries\\(paths\\),null,2\\)\\)\")",
       "Bash(node -e \"const d=require\\('C:/Users/coben/AppData/Local/Temp/openapi.json'\\); const paths=Object.entries\\(d.paths||{}\\).filter\\(\\([k]\\)=>k.toLowerCase\\(\\).includes\\('aicard'\\)\\); console.log\\(JSON.stringify\\(Object.fromEntries\\(paths\\),null,2\\)\\)\")",
-      "Bash(node:*)"
+      "Bash(node:*)",
+      "mcp__plugin_figma_figma__get_metadata",
+      "mcp__plugin_figma_figma__get_design_context",
+      "Bash(mv auth-bg.png auth-bg.svg)",
+      "Bash(mv auth-lines-tl.png auth-lines-tl.svg)",
+      "Bash(mv auth-lines-br.png auth-lines-br.svg)",
+      "Bash(npx next:*)"
     ]
   }
 }
