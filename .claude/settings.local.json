@@ -18,7 +18,9 @@
       "Bash(mv auth-bg.png auth-bg.svg)",
       "Bash(mv auth-lines-tl.png auth-lines-tl.svg)",
       "Bash(mv auth-lines-br.png auth-lines-br.svg)",
-      "Bash(npx next:*)"
+      "Bash(npx next:*)",
+      "Bash(xargs sed:*)",
+      "mcp__plugin_figma_figma__get_screenshot"
     ]
   }
 }

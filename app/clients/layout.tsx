@@ -16,7 +16,7 @@ export default function ClientsLayout({
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router]);
 

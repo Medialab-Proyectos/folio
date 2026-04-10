@@ -14,7 +14,7 @@ export default function DamagesLayout({
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router]);
 

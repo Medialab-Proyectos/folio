@@ -21,7 +21,7 @@ export default function VehiclesPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

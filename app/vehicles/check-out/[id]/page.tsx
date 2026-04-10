@@ -290,7 +290,7 @@ export default function CheckOutPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/')}>
+          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/login')}>
             <Home className="w-4 h-4 mr-2" />
             Return to Home
           </Button>

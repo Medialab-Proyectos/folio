@@ -16,7 +16,7 @@ export default function VehiclesLayout({
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router]);
 

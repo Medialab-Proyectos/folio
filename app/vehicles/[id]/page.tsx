@@ -40,7 +40,7 @@ export default function VehicleDetailPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

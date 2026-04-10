@@ -16,7 +16,7 @@ export default function DashboardLayout({
 
   useEffect(() => {
     if (!currentUser && pathname !== '/') {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router, pathname]);
 

@@ -15,7 +15,7 @@ export default function CheckInLayout({
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router]);
 

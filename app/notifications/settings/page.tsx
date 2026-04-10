@@ -13,7 +13,7 @@ export default function NotificationSettingsPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
     }
   }, [currentUser, router]);
 

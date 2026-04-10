@@ -23,7 +23,7 @@ export default function ClientsPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

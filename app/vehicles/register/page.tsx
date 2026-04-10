@@ -56,7 +56,7 @@ export default function VehicleRegisterPage() {
   const [aiError, setAiError] = useState<string | null>(null);
 
   if (!currentUser) {
-    router.push('/');
+    router.push('/login');
     return null;
   }
 

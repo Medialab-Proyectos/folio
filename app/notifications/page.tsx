@@ -17,7 +17,7 @@ export default function NotificationsPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

@@ -34,7 +34,7 @@ export default function ResetPasswordPage() {
   };
 
   const handleGoToLogin = () => {
-    router.push('/');
+    router.push('/login');
   };
 
   return (
@@ -161,7 +161,7 @@ export default function ResetPasswordPage() {
 
             <button
               type="button"
-              onClick={() => router.push('/')}
+              onClick={() => router.push('/login')}
               className="w-full h-[46px] rounded-xl flex items-center justify-center font-nunito font-semibold text-base text-[#8d6941] border-2 border-[#a5824d] hover:bg-[#a5824d]/5 transition-all active:scale-[0.97] cursor-pointer"
             >
               Cancel

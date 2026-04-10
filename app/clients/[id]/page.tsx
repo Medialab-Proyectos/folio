@@ -17,7 +17,7 @@ export default function ClientDetailPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

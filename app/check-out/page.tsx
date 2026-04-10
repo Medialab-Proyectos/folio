@@ -18,7 +18,7 @@ export default function CheckOutSelectPage() {
 
   useEffect(() => {
     if (!currentUser) {
-      router.push('/');
+      router.push('/login');
       return;
     }
 

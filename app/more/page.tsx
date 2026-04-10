@@ -38,7 +38,7 @@ export default function MorePage() {
   const [pwdError, setPwdError] = useState('');
 
   useEffect(() => {
-    if (!currentUser) router.push('/');
+    if (!currentUser) router.push('/login');
   }, [currentUser, router]);
 
   if (!currentUser) return null;
@@ -48,7 +48,7 @@ export default function MorePage() {
 
   const handleLogout = () => {
     logout();
-    router.push('/');
+    router.push('/login');
   };
 
   const handleChangePassword = async (e: React.FormEvent) => {
