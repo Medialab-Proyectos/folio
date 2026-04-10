@@ -50,9 +50,9 @@ export default function SplashPage() {
         alt=""
         className="absolute pointer-events-none z-[2]"
         style={{
-          top: '14%',
-          left: '-70%',
-          width: '190%',
+          top: '16%',
+          left: '-60%',
+          width: '160%',
           height: 'auto',
           maxWidth: 'none',
           filter: 'drop-shadow(0px 8px 10px rgba(0,0,0,0.2))',
