@@ -91,7 +91,6 @@ export default function PhotoCapture({
         ref={fileInputRef}
         type="file"
         accept="image/*"
-        capture="environment"
         onChange={handleCapture}
         className="hidden"
         multiple={maxPhotos > 1}

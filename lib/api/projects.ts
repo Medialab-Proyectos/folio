@@ -39,4 +39,8 @@ export const projectsApi = {
   /** List active project statuses */
   listStatuses: (): Promise<ProjectStatusRead[]> =>
     api.get<ProjectStatusRead[]>('/projects/statuses'),
+
+  /** Get current authenticated user's projects */
+  listMine: (): Promise<ProjectRead[]> =>
+    api.get<ProjectRead[]>('/projects/me'),
 };

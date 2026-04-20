@@ -39,23 +39,23 @@ export default function SplashPage() {
         }}
       />
 
-      {/* Logo - dark variant, right-aligned like Figma (x=196 of 393) */}
-      <div className="absolute top-[8%] left-1/2 -translate-x-1/4 z-10">
+      {/* Logo - top right corner with proper spacing */}
+      <div className="absolute top-[5%] right-[6%] z-10">
         <GarageFolioLogo variant="dark" size="lg" showText={true} />
       </div>
 
-      {/* Car image - large, starts off-screen left, ~70% visible */}
+      {/* Car image - bigger and more imposing */}
       <img
         src="/auth-car.png"
         alt=""
         className="absolute pointer-events-none z-[2]"
         style={{
-          top: '16%',
-          left: '-60%',
-          width: '160%',
+          top: '14%',
+          left: '-45%',
+          width: '180%',
           height: 'auto',
           maxWidth: 'none',
-          filter: 'drop-shadow(0px 8px 10px rgba(0,0,0,0.2))',
+          filter: 'drop-shadow(0px 12px 16px rgba(0,0,0,0.25))',
         }}
         aria-hidden="true"
       />
@@ -76,7 +76,7 @@ export default function SplashPage() {
           </p>
         </div>
 
-        <div className="mt-auto">
+        <div className="mt-auto pt-6">
         <button
           onClick={() => router.push('/login')}
           className="w-full h-[46px] bg-[#b4955c] hover:bg-[#a5824d] rounded-xl flex items-center justify-center gap-3 font-nunito font-semibold text-base text-[#1a1a1a] transition-all active:scale-[0.97] shadow-md hover:shadow-lg cursor-pointer"

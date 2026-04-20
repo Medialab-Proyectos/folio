@@ -2,61 +2,61 @@
 
 import Link from 'next/link';
 import { usePathname } from 'next/navigation';
-import { Home, Car, Users, Bell, MoreHorizontal } from 'lucide-react';
+
+import { LayoutDashboard, CarFront, Users, Bell, SlidersHorizontal } from 'lucide-react';
 
 const navItems = [
-  { href: '/dashboard', label: 'Dashboard', icon: Home },
-  { href: '/vehicles', label: 'Vehicles', icon: Car },
-  { href: '/clients', label: 'Members', icon: Users },
-  { href: '/notifications', label: 'Alerts', icon: Bell },
-  { href: '/more', label: 'More', icon: MoreHorizontal },
+  { href: '/dashboard', label: 'Dashboard', Icon: LayoutDashboard },
+  { href: '/vehicles',  label: 'Vehicles',  Icon: CarFront },
+  { href: '/clients',   label: 'Members',   Icon: Users },
+  { href: '/notifications', label: 'Alerts', Icon: Bell },
+  { href: '/more',      label: 'More',      Icon: SlidersHorizontal },
 ];
 
 export default function BottomNav() {
   const pathname = usePathname();
 
   return (
-    <nav className="fixed bottom-0 left-0 right-0 z-40 glass-dark border-t border-white/[0.06]" style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}>
+    <nav
+      className="fixed bottom-0 left-0 right-0 z-40 glass-dark border-t border-x border-white/[0.06] rounded-t-2xl overflow-hidden shadow-[0_-8px_30px_rgb(0,0,0,0.12)]"
+      style={{ paddingBottom: 'env(safe-area-inset-bottom, 0px)' }}
+    >
       <div className="flex items-center justify-around h-[68px] max-w-2xl mx-auto px-1">
-        {navItems.map((item) => {
-          const isActive = pathname?.startsWith(item.href);
-          const Icon = item.icon;
-          
+        {navItems.map(({ href, label, Icon }) => {
+          const isActive = pathname?.startsWith(href);
+
           return (
             <Link
-              key={item.href}
-              href={item.href}
+              key={href}
+              href={href}
               className="flex flex-col items-center justify-center flex-1 h-full group transition-all duration-200 ease-out active:scale-95"
             >
-              {/* Ícono con círculo dorado cuando activo */}
+              {/* Icon with golden active circle */}
               <div className="relative">
                 <div
-                  className={`flex items-center justify-center w-10 h-10 rounded-full transition-all duration-300 ease-out ${
-                    isActive 
-                      ? 'bg-gold shadow-lg shadow-[hsl(var(--gold-accent))]/25' 
+                  className={`flex items-center justify-center w-11 h-11 rounded-full transition-all duration-300 ease-out ${
+                    isActive
+                      ? 'bg-gold shadow-lg shadow-[hsl(var(--gold-accent))]/25'
                       : 'bg-transparent group-hover:bg-white/[0.06]'
                   }`}
                 >
                   <Icon
-                    className={`w-[20px] h-[20px] transition-all duration-300 ${
-                      isActive ? 'text-white' : 'text-gray-500 group-hover:text-gray-300'
+                    className={`w-5 h-5 transition-colors ${
+                      isActive ? 'text-background' : 'text-gray-500 group-hover:text-gray-300'
                     }`}
-                    strokeWidth={isActive ? 2.5 : 1.8}
                   />
                 </div>
-                {/* Active dot indicator */}
-                {isActive && (
-                  <div className="absolute -bottom-0.5 left-1/2 -translate-x-1/2 w-1 h-1 rounded-full bg-[hsl(var(--gold-accent))] animate-scale-in" />
-                )}
               </div>
-              
-              {/* Label con transición suave */}
+
+              {/* Label */}
               <span
                 className={`text-[10px] mt-0.5 font-medium tracking-wide transition-all duration-300 ${
-                  isActive ? 'text-[hsl(var(--gold-accent))]' : 'text-gray-600 group-hover:text-gray-400'
+                  isActive
+                    ? 'text-[hsl(var(--gold-accent))]'
+                    : 'text-gray-600 group-hover:text-gray-400'
                 }`}
               >
-                {item.label}
+                {label}
               </span>
             </Link>
           );

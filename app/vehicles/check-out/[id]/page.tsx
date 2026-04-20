@@ -290,7 +290,7 @@ export default function CheckOutPage() {
         </div>
 
         <div className="w-full max-w-sm space-y-3">
-          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/login')}>
+          <Button className="w-full btn-dark h-12 text-base" onClick={() => router.push('/dashboard')}>
             <Home className="w-4 h-4 mr-2" />
             Return to Home
           </Button>
@@ -538,15 +538,33 @@ export default function CheckOutPage() {
             </h3>
             <div className="relative w-full aspect-[2/3] bg-muted/20 rounded-lg">
               <svg viewBox="0 0 100 100" className="w-full h-full">
-                <g className="text-muted-foreground/30" fill="none" stroke="currentColor" strokeWidth="1.5">
-                  <path d="M30,12 C30,5 70,5 70,12 L76,35 C78,45 78,60 76,75 C75,88 70,95 50,95 C30,95 25,88 24,75 C22,60 22,45 24,35 Z" />
-                  <path d="M28,33 Q50,38 72,33 L66,45 Q50,43 34,45 Z" fill="currentColor" fillOpacity="0.05" />
-                  <path d="M33,72 Q50,69 67,72 L62,62 Q50,64 38,62 Z" fill="currentColor" fillOpacity="0.05" />
-                  <rect x="34" y="45" width="32" height="17" rx="6" />
-                  <path d="M33,13 L31,28 M67,13 L69,28" strokeWidth="1" className="text-muted-foreground/20" />
-                  <path d="M30,85 Q50,82 70,85" strokeWidth="1" className="text-muted-foreground/20" />
-                  <path d="M25,38 L21,38 C19,38 19,42 22,42 Z" fill="currentColor" opacity="0.5" />
-                  <path d="M75,38 L79,38 C81,38 81,42 78,42 Z" fill="currentColor" opacity="0.5" />
+                <g className="text-muted-foreground/50" fill="none" stroke="currentColor" strokeWidth="1.2">
+                  {/* Main car body - top view */}
+                  <path d="M36,6 L64,6 C68,6 72,8 73,11 L76,24 L78,38 L78,62 L76,76 L73,89 C72,92 68,94 64,94 L36,94 C32,94 28,92 27,89 L24,76 L22,62 L22,38 L24,24 L27,11 C28,8 32,6 36,6 Z" />
+                  {/* Front windshield */}
+                  <path d="M38,19 L62,19 L61,32 L39,32 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
+                  {/* Rear window */}
+                  <path d="M39,68 L61,68 L62,81 L38,81 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
+                  {/* Cabin roof */}
+                  <rect x="38" y="32" width="24" height="36" rx="3" fill="currentColor" fillOpacity="0.05" strokeWidth="0.8" />
+                  {/* Front left wheel */}
+                  <rect x="8" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
+                  {/* Front right wheel */}
+                  <rect x="79" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
+                  {/* Rear left wheel */}
+                  <rect x="8" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
+                  {/* Rear right wheel */}
+                  <rect x="79" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
+                  {/* Left mirror */}
+                  <path d="M22,34 L15,37 L15,43 L22,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
+                  {/* Right mirror */}
+                  <path d="M78,34 L85,37 L85,43 L78,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
+                  {/* Door separator */}
+                  <path d="M22,58 L78,58" strokeWidth="0.6" strokeDasharray="2,2" opacity="0.5" />
+                  {/* Hood lines */}
+                  <path d="M42,10 L42,22 M58,10 L58,22" strokeWidth="0.5" opacity="0.35" />
+                  {/* Trunk lines */}
+                  <path d="M42,78 L42,90 M58,78 L58,90" strokeWidth="0.5" opacity="0.35" />
                 </g>
 
                 {CAR_PARTS.map(part => (

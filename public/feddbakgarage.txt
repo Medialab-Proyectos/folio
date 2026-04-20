@@ -1,0 +1,239 @@
+Archivo de audio
+20260420_101312.m4a
+
+Transcripción
+00:00:00
+Bueno, voy a hacer el recorrido por Garage Folio.
+00:00:04
+Voy a ingresar a la aplicación que se encuentra desplegada en el sitio.
+00:00:14
+Busco por acá Garage Folio o K ya estoy dentro de la app, estoy tratando de ingresar, estoy viendo el login.
+00:00:25
+Bueno, estoy viendo el splash de la pantalla, se ve bien.
+00:00:29
+Sin embargo, el vehículo que sale al lado izquierdo, que es un vehículo ***** se ve un poco pequeño.
+00:00:38
+Debería ser.
+00:00:39
+Está bien la altura del vehículo en la car, casi al centro, pero debe ser un poco más grande, un poco más imponente, y la parte del logo en la parte superior, en la parte superior, la parte superior derecha.
+00:00:56
+No está en la parte superior derecha, se lo ve un poco como al centro, se lo ve raro, debería estar en la parte superior derecha con un espaciado como un logo de logo de producto.
+00:01:07
+Le voy a dar a bueno, let's go, que es el botón que se encuentra abajo en este splash.
+00:01:11
+Debería tener un poquito más de aire con respecto al texto en la parte superior.
+00:01:16
+Voy a darle login.
+00:01:17
+Cuando le doy login, pues busco el usuario.
+00:01:20
+Está bien aquí el login, usar en el diseño.
+00:01:24
+En la parte de abajo hay un espacio en blanco y en ese espacio en blanco siento que hay unas líneas también que acompañan el diseño.
+00:01:33
+Voy a ir a login, entro a la aplicación.
+00:01:37
+Bueno, entro al producto.
+00:01:39
+El logo de Garage Folio en la parte superior izquierda se ve muy pequeño, sí, y pues como que se se se se confunde con Make Garage Facility.
+00:01:51
+Ya que tiene como la misma, pareciese que fuesen los 2 la misma cosa.
+00:01:55
+Entonces un poquito el logo más grande para que se haga una diferenciación en la parte inferior de lo que veo en el header.
+00:02:03
+En el footer está un menú flotante.
+00:02:07
+Este menú, bueno, este menú que está es un sticky, un menú sticky.
+00:02:10
+Me doy cuenta que el menú sticky, cada vez que yo doy clic aparece como un punto debajo del botón.
+00:02:18
+Sí, que no sé por qué aparece.
+00:02:21
+Si ya se pinta con el círculo de color de color de color cada vez que doy clic encima, entonces quitarle ese punto que aparece extra dentro de la aplicación.
+00:02:31
+Al ingresar veo el inventory, la ocupación, los check in, los checkouts, los espacios disponibles, el log de actividades que se ve bastante bien.
+00:02:42
+Sin embargo, sería bueno colocar de fondo de background como esa misma estructura de líneas.
+00:02:49
+Sí, como de líneas, como para darle un background un poco más interesante, no con color, pero con unas líneas como está en las pantallas de login.
+00:02:57
+Sí, para poder continuar en el ejercicio.
+00:03:01
+Ahora estoy dentro del dashboard.
+00:03:03
+Tengo un botón importante que se llama registrar nuevo vehículo.
+00:03:08
+Sí, debería estar de primera pantalla, debería estar un poco más arriba, dice Quick Actions, y cuando está en la pantalla.
+00:03:17
+Debería ser un botón de registrar nuevo vehículo, debería estar como de primero en la parte superior porque pues acá abajo queda perdido, queda en último lugar y se ve bastante perdido.
+00:03:26
+Vamos a registrar un nuevo vehículo.
+00:03:28
+Cuando registra un nuevo vehículo en la parte superior dice add new vehículo y sale el logo de Garage Folio.
+00:03:37
+Ese hay que quitarlo en la parte superior en el banal dice add nuevo vehículo y al lado aparece como el icono de Garage Folio.
+00:03:42
+Ese hay que quitarlo, no aporta nada y no se ve, no se ve bien.
+00:03:46
+Ahora sí, voy a tomar una foto de algún objeto que entré en el spa.
+00:03:52
+Se toma la foto correctamente, se está analizando la foto y aparecen 3 pasos arriba.
+00:03:59
+Sí, en la parte de abajo dice step uno de 3 y dice confirmar vehículo.
+00:04:05
+En la parte superior, ese icono de confirmar vehículo que apareció, bueno, se ve, se ve bien.
+00:04:15
+Si se puede hacer algo un poco más premium, estaría perfecto.
+00:04:18
+Voy a incluir los datos del vehículo a Bc modelo.
+00:04:26
+Listo, aquí aparece el año, pero el año viene por defecto con 2026.
+00:04:30
+Habría que quitar ese 2026 y también dejarle que se pueda incluir 1 año.
+00:04:34
+Sí, en el caso de que no sea detectado, color ***** ***** y placa a Bc.
+00:04:46
+12357 y el BIN, que es un número por obligación que tiene 17 caracteres, que se ve bastante bien, de acuerdo, listo, le doy continuar, selecciono, dice seleccione la under member, yo puedo adicionar uno nuevo o puedo en la parte de abajo decirle chose member, en este caso sería test Iban y coloco que el facility se llama string o k hasta ahí es hasta ahí está bien, de acuerdo.
+00:05:14
+No sé si listo, ya está bien, le doy continuar.
+00:05:19
+Yo ya tengo una imagen escaneada, puedo empezar a colocar las imágenes del exterior e interior del vehículo.
+00:05:26
+Entonces aquí coloco como vamos a ver si puedo tomar una foto.
+00:05:32
+Sí, pero qué curioso, cuando doy clic en adicional me lleva a buscar una foto de el historial, no me deja.
+00:05:44
+No me deja, es no me deja, es tomar una foto desde la cámara, acá le digo foto y me va a la foto o me va a los álbumes.
+00:05:53
+Sí, pero pues no me deja, no me deja tomar una foto, se queda sin tomar una foto.
+00:06:04
+Entonces queda como queda bien curioso, no puedo tomar una foto, me parece súper raro el efecto, sería bueno revisarlo.
+00:06:14
+Entonces vamos a colocarle acá las millas recorridas, que es un dato que debería estar como la fecha de expiración, que eso vamos a colocarle lejitos, establecer y la fecha de seguro que vamos a colocar lejitos, que lo vamos a establecer.
+00:06:31
+Notas nny completamos el registro.
+00:06:42
+Le doy completar registro y no pasa.
+00:06:45
+Parece que hay un error, solo tengo una sola foto.
+00:06:49
+Pero no pasa.
+00:06:50
+A ver, vamos a adicionar otra nueva foto, vamos a colocar otra foto, vamos a colocar otra foto, vamos a colocar otra foto, sigue colocando fotos, pero cuando le doy completar registro no pasa.
+00:07:22
+Se queda en complementar registro, no pasa el registro.
+00:07:25
+Hay que revisar si el endpoint está funcionando correctamente porque no me deja seleccionar registro.
+00:07:31
+Me regreso a la parte inicial.
+00:07:34
+Sí, listo.
+00:07:38
+Cuando llego add new vehículo, como recién se está ingresando el vehículo, bueno, en esa parte no deberíamos salir.
+00:07:45
+Sí, avisar manualmente o regresar a inicio.
+00:07:48
+Ahí está bien.
+00:07:49
+Ahora, cuando me voy a vehículos, yo tengo los diferentes vehículos que se ven ahí.
+00:07:53
+Voy a seleccionar uno de los vehículos que está en la base de datos.
+00:07:58
+Sí, en este momento parece ser que solo me está cargando una sola foto, que es la foto del front.
+00:08:04
+Aunque hay más fotos que se han tomado, están los elementos, pero aquí vamos a dar un check in, un check out o k.
+00:08:16
+Entonces dice que está en storage y lo voy a sacar.
+00:08:21
+Dice Start Inspection Registration.
+00:08:24
+Me muestra las fotos que ya tenía y Start la inspección.
+00:08:28
+Hay una cosa interesante en este tipo y es que aunque está la inspección, yo debería seleccionar el punto.
+00:08:35
+Sí, voy a seleccionar el punto, pero al seleccionar el punto, pero al seleccionar el punto.
+00:08:43
+No me deja ver la foto que ya estaba ahí, es decir, debería marcarse la foto, poderla ver o poderla eliminar o poderla, como decían ellos, poderla archivar.
+00:08:53
+Si yo ya tengo una foto, cuando yo le doy para la inspección de salida, en la inspección de salida, yo debo ver el vehículo y dentro del vehículo, al darle clic en el objeto, debería debería buscar, debería mostrarme la foto actual.
+00:09:07
+Sí, poder quitar una foto, poder quitar esa foto actual o adicionar la foto actual.
+00:09:13
+De acuerdo, de tal manera que pues yo tenga la posibilidad de o archivar la foto para que solo me quede la foto actual, porque acá me aparece de nuevo que puedo ver todas las fotos, no puedo ver lo que había antes con lo que llegó en el check-in del vehículo.
+00:09:27
+Entonces debería poder hacer una foto y poder como reemplazar la foto.
+00:09:31
+Sí, para no ver tantas fotos.
+00:09:33
+Únicamente tiene un proceso de cuatro fotos por cada uno de los puntos, pero pues al darle clic yo no veo más fotos y eso sería importante tenerlo en cuenta entonces.
+00:09:43
+Los puntos que tienen daños, pues se deben colocar en rojo y si no tienen daños, pues quedarían en verde y los que están en daño, pues él puede volverlas a tomar las fotos o simplemente quitar y colocar la foto que está bien.
+00:09:54
+Bien para que se entonces continúa con la revisión.
+00:09:56
+Dice que no hay daños abiertos, sí, pero no se sabe con lo que llegó el vehículo.
+00:10:01
+Entonces checkout completo, listo.
+00:10:03
+Acá cuando llega al checkout completo dice return returno vehículos y cuando le digo retorno a vehículos se va al home de la aplicación.
+00:10:13
+Entonces no debería pasar eso, debería regresar al home del producto.
+00:10:17
+Voy a volverme a loguear, sí, volverme a loguear, vamos a ver que tenemos.
+00:10:22
+Ya me apareció una actividad reciente y me voy al check in del vehículo.
+00:10:26
+Dice que yo tengo varios vehículos para colocar en check in y entonces vamos a meter en check in un for Mustang, check al vehículo.
+00:10:33
+Sí, continúa con récord condición o k.
+00:10:38
+Cuando yo voy a dar un check in al vehículo y si el y si el vehículo ya estuvo antes en el garaje, pues debería reportarme también todas las fotos que ya tiene ese vehículo anexo.
+00:10:47
+Si no tiene fotos, pues no aparece ninguna y se puede reemplazar esa foto.
+00:10:51
+Sí, es decir, yo podría reemplazar esa foto, digo o k, entonces puedo reemplazarla por una foto nueva, puedo quitarla y así darle continuidad al proceso.
+00:11:01
+Bien, me regreso, listo, me regreso hacia atrás, listo, continuo con récord.
+00:11:08
+Listo, lo ingreso, no encontré ninguno, entro al check in.
+00:11:12
+Listo, cuando vuelvo al home, bueno, hay que revisar que los botones regresen, no al el return home o return checklist o new view vehicle details.
+00:11:23
+No deberían regresar es al login, sino debería regresar a la pantalla correspondiente.
+00:11:28
+Me voy hacia atrás, me ha salido la aplicación, me voy a return to home, me vuelve a sacar el o k usar.
+00:11:37
+Otra cosa.
+00:11:38
+Otra cosa es que cuando yo entro a ver el vehículo, el check in, el check out, el vehículo, el vehículo, la foto que aparece, es decir, cuando dice voy a hacer un exit inspection, hay una foto que se ve muy curiosa.
+00:11:52
+Atrás se ve como un SVG de un vehículo, pero pues eso no es un vehículo.
+00:11:57
+Entonces habría que cambiar, es un SVG que no parece un vehículo.
+00:12:01
+Habría que crear un SVG de un vehículo vehículo desde esa visión para poder.
+00:12:06
+Incluirlo ya un SVG real, tal vez una imagen PNG, algo que se pueda ver altamente bastante bien.
+00:12:13
+Sí, que solo sea el blanco y ***** pero que sea un vehículo y que se pueda dar tip tap en las partes.
+00:12:18
+De acuerdo, bien, hay una cosa que cuando yo me regreso a checkout o vehículo, el botón hacia atrás se vuelve ***** el botón en la parte superior atrás del tap se vuelve *****.
+00:12:29
+No sé por qué.
+00:12:31
+Listo, ahora sí me voy a miembros, listo.
+00:12:34
+Aquí tengo los miembros activos inactivos o k adicional miembro o k se puede adicionar miembro como y corriente, no hay problema, me voy a hacer alertas y notificación de broadcast, listo, change password o k perfecto y por lo demás listo, me voy aquí al Dash.
+00:12:53
+Bien, cosas interesantes que se podrían hacer como para mejorar un poco la plataforma es que en las cajitas que dicen inventory.
+00:13:03
+Ocupación, se podrían como se se podrían como colocar algunos elementos gráficos como una imagen de fondo, sí que no tape sí los objetos, sí, o para que sea un poco más visible, para que sea un poco más, tenga mucho más engagement con imágenes de personas reales.
+00:13:20
+¿Y qué significa cada una de esas cosas?
+00:13:22
+Sí, para que sea un poco más cómoda la visibilidad.
+00:13:26
+Bien, igual los iconos, tal vez buscar unos iconos más premium.
+00:13:31
+En la parte del footer inferior, que creo que le hace bastante falta al proyecto listo.
+

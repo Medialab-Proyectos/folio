@@ -129,15 +129,21 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
           if (s.currentUser) s.currentUser.facilityId = list[0].id;
         }
       }),
-      // Cars → Vehicles (Load cars first without blocking on surveys)
-      carsApi.list({ items: 100 }).then(({ items }) => {
+      // Cars → Vehicles: try list first (broader), fall back to /cars/me
+      Promise.any([
+        carsApi.list({ items: 200 }).then(r => Array.isArray(r) ? r : r.items ?? []),
+        carsApi.getMe(),
+      ]).catch(() => [] as any[]).then((items: any[]) => {
         let localPhotos: Record<string, any> = {};
         if (typeof window !== 'undefined') {
           try { localPhotos = JSON.parse(localStorage.getItem('GF_VEHICLE_PHOTOS') || '{}'); } catch {}
         }
-        
-        s.vehicles = items.map((c: any) => {
-          const v = carToVehicle(c, staffUser.facilityId);
+
+        const rawItems = Array.isArray(items) ? items : (items as any).items ?? [];
+        s.vehicles = rawItems.map((c: any) => {
+          // Always assign current facility if API car has no facility_id
+          const facilityId = c.facility_id || staffUser.facilityId;
+          const v = carToVehicle({ ...c, facility_id: facilityId }, staffUser.facilityId);
           if (localPhotos[v.id]) {
             v.initialDocumentation = localPhotos[v.id];
           }
@@ -262,19 +268,23 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
   const refreshVehicles = useCallback(async () => {
     if (!store) return;
     try {
-      const { items } = await carsApi.list({ items: 100 });
       const facilityId = store.currentUser?.facilityId;
+      const raw = await Promise.any([
+        carsApi.list({ items: 200 }).then(r => Array.isArray(r) ? r : r.items ?? []),
+        carsApi.getMe(),
+      ]).catch(() => [] as any[]);
+      const items: any[] = Array.isArray(raw) ? raw : (raw as any).items ?? [];
       setStore(prev => {
         if (!prev) return prev;
         let localPhotos: Record<string, any> = {};
         if (typeof window !== 'undefined') {
           try { localPhotos = JSON.parse(localStorage.getItem('GF_VEHICLE_PHOTOS') || '{}'); } catch {}
         }
-        
         return {
           ...prev,
           vehicles: items.map((c: any) => {
-            const v = carToVehicle(c, facilityId);
+            const resolvedFacilityId = c.facility_id || facilityId;
+            const v = carToVehicle({ ...c, facility_id: resolvedFacilityId }, facilityId);
             if (localPhotos[v.id]) {
               v.initialDocumentation = localPhotos[v.id];
             }

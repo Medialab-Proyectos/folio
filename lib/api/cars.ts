@@ -5,12 +5,17 @@ import type {
   CarUpdate,
   PaginatedCars,
   CarListParams,
+  ProjectRead,
 } from './types';
 
 export const carsApi = {
   /** List cars with optional filters and pagination */
   list: (params?: CarListParams): Promise<PaginatedCars> =>
     api.get<PaginatedCars>('/cars/', { params: params as Record<string, string | number | boolean | undefined | null> }),
+
+  /** Get current authenticated user's cars */
+  getMe: (): Promise<CarRead[]> =>
+    api.get<CarRead[]>('/cars/me'),
 
   /** Create a new car */
   create: (data: CarCreate): Promise<CarRead> =>
@@ -29,4 +34,8 @@ export const carsApi = {
     api.patch<CarRead>(`/cars/${carId}/activate-desactivate`, undefined, {
       params: { car_status: carStatus },
     }),
+
+  /** Get all projects associated with a specific car */
+  getProjects: (carId: string): Promise<ProjectRead[]> =>
+    api.get<ProjectRead[]>(`/cars/${carId}/projects`),
 };

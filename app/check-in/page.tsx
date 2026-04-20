@@ -5,10 +5,10 @@ import { useRouter } from 'next/navigation';
 import { useApp } from '@/lib/context/app-context';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { ArrowLeft, Search, LogIn, AlertCircle, Car } from 'lucide-react';
+import { ArrowLeft, Search, LogIn, AlertCircle } from 'lucide-react';
 import { Vehicle } from '@/lib/types';
 import Link from 'next/link';
-import Image from 'next/image';
+import { UltraCarSvg } from '@/components/shared/ultra-car-svg';
 
 export default function CheckInSelectPage() {
   const router = useRouter();
@@ -23,8 +23,9 @@ export default function CheckInSelectPage() {
     }
 
     // Only show vehicles that are checked_out and can be checked in
+    // Also include vehicles with no facilityId (API may not return facility_id)
     let filtered = store.vehicles.filter(
-      v => v.facilityId === currentFacility && v.status === 'checked_out'
+      v => (!currentFacility || !v.facilityId || v.facilityId === currentFacility) && v.status === 'checked_out'
     );
 
     if (search) {
@@ -58,8 +59,16 @@ export default function CheckInSelectPage() {
   return (
     <div className="min-h-screen pb-safe bg-background">
       {/* Header */}
-      <div className="header-dark-gradient text-white sticky top-0 z-30">
-        <div className="px-4 py-4 space-y-4">
+      <div className="header-dark-gradient text-white sticky top-0 z-30 overflow-hidden">
+        {/* Ultra-detail car SVG — full-bleed hero behind the header */}
+        <div className="absolute inset-0 pointer-events-none overflow-hidden">
+          <UltraCarSvg
+            variant="in"
+            opacity={0.13}
+            className="absolute -bottom-8 -right-10 w-[520px] h-auto"
+          />
+        </div>
+        <div className="relative z-10 px-4 py-4 space-y-4">
           <div className="flex items-center gap-3">
             <Button
               variant="ghost"
@@ -92,16 +101,22 @@ export default function CheckInSelectPage() {
       {/* Content */}
       <div className="p-4 space-y-3 max-w-2xl mx-auto">
         {vehicles.length === 0 ? (
-          <div className="card-premium p-10 text-center animate-fade-in">
-            <div className="w-14 h-14 rounded-full bg-muted mx-auto mb-3 flex items-center justify-center">
-              <Car className="w-7 h-7 text-muted-foreground/40" />
+          <div className="card-premium p-10 text-center animate-fade-in relative overflow-hidden">
+            {/* Ultra SVG car watermark in empty state */}
+            <div className="absolute inset-0 pointer-events-none flex items-end justify-center overflow-hidden">
+              <UltraCarSvg variant="in" opacity={0.07} className="w-full max-w-md" />
             </div>
-            <h3 className="font-bold mb-1">No Vehicles to Check In</h3>
-            <p className="text-sm text-muted-foreground">
-              {search
-                ? 'No vehicles match your search'
-                : 'All vehicles are currently in storage or archived'}
-            </p>
+            <div className="relative z-10">
+              <div className="w-14 h-14 rounded-full bg-green-500/10 border border-green-500/20 mx-auto mb-3 flex items-center justify-center">
+                <LogIn className="w-7 h-7 text-green-500/70" />
+              </div>
+              <h3 className="font-bold mb-1">No Vehicles to Check In</h3>
+              <p className="text-sm text-muted-foreground">
+                {search
+                  ? 'No vehicles match your search'
+                  : 'All vehicles are currently in storage or archived'}
+              </p>
+            </div>
           </div>
         ) : (
           <>
@@ -131,9 +146,8 @@ export default function CheckInSelectPage() {
                           className="w-full h-full object-cover"
                         />
                       ) : (
-                        <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a] relative">
-                          <Image src="/vehicle-placeholder.png" alt="Vehicle placeholder" fill className="object-cover opacity-50 mix-blend-screen" />
-                          <Car className="w-8 h-8 text-muted-foreground/40 relative z-10" />
+                        <div className="w-full h-full flex items-center justify-center bg-[#0a0a0a] overflow-hidden relative">
+                          <UltraCarSvg variant="in" opacity={0.6} className="absolute inset-0 w-full h-full scale-[1.8] translate-y-2" />
                         </div>
                       )}
                     </div>

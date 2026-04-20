@@ -15,7 +15,6 @@ import { userCarsApi } from '@/lib/api/user-cars';
 import { aicardApi } from '@/lib/api/aicard';
 import { vehicleToCarCreate } from '@/lib/api/mappers';
 import { CreateMemberModal } from '@/components/shared/create-member-modal';
-import { GarageFolioLogo } from '@/components/shared/garagefolio-logo';
 
 type Step = 0 | 1 | 2 | 3;
 
@@ -29,7 +28,7 @@ export default function VehicleRegisterPage() {
   const [formData, setFormData] = useState({
     make: '',
     model: '',
-    year: new Date().getFullYear(),
+    year: 0,
     color: '',
     licensePlate: '',
     vin: '',
@@ -117,7 +116,7 @@ export default function VehicleRegisterPage() {
           if (!result) {
             setAiDetected(false);
             setAiError('No vehicle detected. Please fill in the details manually.');
-            setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
+            setFormData(prev => ({ ...prev, make: '', model: '', year: 0, color: '', licensePlate: '' }));
             return;
           }
           // AICardBasicResponse fields: brand, model, year, color, plate
@@ -135,14 +134,14 @@ export default function VehicleRegisterPage() {
           } else {
             setAiDetected(false);
             setAiError('Could not read vehicle details. Please fill in manually.');
-            setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
+            setFormData(prev => ({ ...prev, make: '', model: '', year: 0, color: '', licensePlate: '' }));
           }
         })
         .catch((err: unknown) => {
           setAiDetected(false);
           const msg = err instanceof Error ? err.message : 'AI analysis unavailable.';
           setAiError(msg);
-          setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
+          setFormData(prev => ({ ...prev, make: '', model: '', year: 0, color: '', licensePlate: '' }));
         })
         .finally(() => setAiAnalyzing(false));
     }
@@ -304,7 +303,7 @@ export default function VehicleRegisterPage() {
               </Button>
               <Button variant="outline" onClick={() => {
                 setRearPhoto(null);
-                setFormData(prev => ({ ...prev, make: '', model: '', year: new Date().getFullYear(), color: '', licensePlate: '' }));
+                setFormData(prev => ({ ...prev, make: '', model: '', year: 0, color: '', licensePlate: '' }));
                 setAiDetected(null);
                 setAiError(null);
                 setStep(1);
@@ -423,8 +422,9 @@ export default function VehicleRegisterPage() {
                     <Input
                       id="year"
                       type="number"
-                      value={formData.year}
-                      onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) }))}
+                      value={formData.year || ''}
+                      placeholder="e.g. 2018"
+                      onChange={(e) => setFormData(prev => ({ ...prev, year: parseInt(e.target.value) || 0 }))}
                       required
                       disabled={aiAnalyzing}
                       className="h-12 rounded-xl"
@@ -672,7 +672,7 @@ export default function VehicleRegisterPage() {
 
   const canProceed = () => {
     switch (step) {
-      case 1: return formData.make && formData.model && formData.licensePlate && formData.color;
+      case 1: return formData.make && formData.model && formData.licensePlate && formData.color && formData.year > 1900;
       case 2: return formData.clientId;
       default: return true;
     }
@@ -708,7 +708,6 @@ export default function VehicleRegisterPage() {
           )}
           {step === 0 && (
             <div className="flex-1 flex items-center gap-3">
-              <GarageFolioLogo variant="gold" size="sm" showText={false} />
               <h1 className="text-lg font-semibold">Add New Vehicle</h1>
             </div>
           )}

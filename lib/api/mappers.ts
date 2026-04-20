@@ -70,7 +70,7 @@ export function vehicleToCarCreate(v: Omit<Vehicle, 'id'>): CarCreate {
   return {
     make: v.make,
     model: v.model,
-    year: v.year,
+    year: v.year > 0 ? v.year : new Date().getFullYear(),
     user_id: isUUID(v.clientId) ? v.clientId : FALLBACK_UUID,
     facility_id: isUUID(v.facilityId) ? v.facilityId : FALLBACK_UUID,
     staff_user_id: isUUID(v.createdByStaffUserId) ? v.createdByStaffUserId : FALLBACK_UUID,
@@ -78,8 +78,6 @@ export function vehicleToCarCreate(v: Omit<Vehicle, 'id'>): CarCreate {
     vin: v.vin,
     odometer: v.odometer,
     nickname: JSON.stringify(extra),
-    notes: 0,
-    voice: 0,
     location: v.status,
     registration_date: v.registrationExpDate,
     insurance_date: v.insuranceExpDate,
