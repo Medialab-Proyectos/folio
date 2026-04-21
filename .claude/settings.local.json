@@ -20,7 +20,15 @@
       "Bash(mv auth-lines-br.png auth-lines-br.svg)",
       "Bash(npx next:*)",
       "Bash(xargs sed:*)",
-      "mcp__plugin_figma_figma__get_screenshot"
+      "mcp__plugin_figma_figma__get_screenshot",
+      "Bash(npx tsc:*)",
+      "WebFetch(domain:34.233.63.96:8001)",
+      "Bash(python -c \"import json,sys; spec=json.load\\(sys.stdin\\); schemas=spec.get\\('components',{}\\).get\\('schemas',{}\\); paginated=[k for k in schemas if 'Paginated' in k or 'paginated' in k.lower\\(\\)]; print\\('Paginated schemas:', paginated\\); print\\(\\); [print\\(k,':', json.dumps\\(schemas[k], indent=2\\)\\) for k in paginated[:5]]\")",
+      "Bash(grep -v \"^$\")",
+      "Bash(nslookup:*)",
+      "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/lib/api/**)",
+      "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/src/lib/**)",
+      "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/**)"
     ]
   }
 }

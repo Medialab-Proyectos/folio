@@ -31,10 +31,10 @@ export function carToVehicle(car: CarRead, defaultFacilityId?: string): Vehicle 
     id: car.id,
     facilityId: car.facility_id || defaultFacilityId || '',
     clientId: car.user_id || '',
-    licensePlate: car.vin_number || '',
+    licensePlate: car.plate || car.vin_number || '',
     make: car.make,
     model: car.model,
-    color: extra.color || '',
+    color: car.color || extra.color || '',
     year: car.year,
     vin: car.vin || '',
     status: (car.location as VehicleStatus) || 'checked_out',
@@ -61,7 +61,6 @@ const FALLBACK_UUID = '00000000-0000-0000-0000-000000000000';
 
 export function vehicleToCarCreate(v: Omit<Vehicle, 'id'>): CarCreate {
   const extra: CarExtra = {
-    color: v.color,
     statusUpdatedAt: v.statusUpdatedAt,
     originalNotes: v.notes,
     registrationCompleted: v.registrationCompleted,
@@ -70,6 +69,8 @@ export function vehicleToCarCreate(v: Omit<Vehicle, 'id'>): CarCreate {
   return {
     make: v.make,
     model: v.model,
+    plate: v.licensePlate,
+    color: v.color,
     year: v.year > 0 ? v.year : new Date().getFullYear(),
     user_id: isUUID(v.clientId) ? v.clientId : FALLBACK_UUID,
     facility_id: isUUID(v.facilityId) ? v.facilityId : FALLBACK_UUID,
@@ -98,7 +99,8 @@ export function vehicleToCarUpdate(v: Partial<Vehicle>, existingNotes?: string):
     ...(v.make && { make: v.make }),
     ...(v.model && { model: v.model }),
     ...(v.year && { year: v.year }),
-    ...(v.licensePlate !== undefined && { vin_number: v.licensePlate }),
+    ...(v.licensePlate !== undefined && { plate: v.licensePlate, vin_number: v.licensePlate }),
+    ...(v.color !== undefined && { color: v.color }),
     ...(v.vin !== undefined && { vin: v.vin }),
     ...(v.odometer !== undefined && { odometer: v.odometer }),
     nickname: JSON.stringify(extra),
@@ -124,7 +126,7 @@ export function userToStaffUser(user: UserRead, defaultFacilityId?: string): Sta
   return {
     id: user.id,
     facilityId: isUUID(user.place) ? user.place : (defaultFacilityId || ''),
-    role: user.type === 'super_user' ? 'super_user' : 'regular_user',
+    role: (user.type === 'super_user' || user.type === 'admin' || user.type === 'adminuser') ? 'super_user' : 'regular_user',
     firstName,
     lastName,
     phone: user.phone || '',

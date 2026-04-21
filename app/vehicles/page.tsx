@@ -6,7 +6,7 @@ import { useApp } from '@/lib/context/app-context';
 import { BottomNav } from '@/components/layout/bottom-nav';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
-import { Plus, Search, AlertCircle } from 'lucide-react';
+import { Plus, Search, AlertCircle, RefreshCw } from 'lucide-react';
 import { Vehicle } from '@/lib/types';
 import Link from 'next/link';
 import { UltraCarSvg } from '@/components/shared/ultra-car-svg';
@@ -14,10 +14,11 @@ import { UltraCarSvg } from '@/components/shared/ultra-car-svg';
 export default function VehiclesPage() {
   const router = useRouter();
   const searchParams = useSearchParams();
-  const { currentUser, store, currentFacility } = useApp();
+  const { currentUser, store, currentFacility, refreshVehicles } = useApp();
   const [search, setSearch] = useState('');
   const [statusFilter, setStatusFilter] = useState<'all' | 'in_storage' | 'checked_out' | 'archived'>('all');
   const [vehicles, setVehicles] = useState<Vehicle[]>([]);
+  const [refreshing, setRefreshing] = useState(false);
 
   useEffect(() => {
     if (!currentUser) {
@@ -25,11 +26,9 @@ export default function VehiclesPage() {
       return;
     }
 
-    // Show vehicles for this facility. Also include vehicles with no facilityId
-    // (API may return cars without facility_id assigned — we still want to show them)
-    let filtered = store.vehicles.filter(v =>
-      !currentFacility || !v.facilityId || v.facilityId === currentFacility
-    );
+    // Show all vehicles — facilityId filtering is best-effort only since
+    // cars loaded from /cars/me may have a different or missing facility_id.
+    let filtered = store.vehicles;
 
     if (statusFilter !== 'all') {
       filtered = filtered.filter(v => v.status === statusFilter);
@@ -84,12 +83,27 @@ export default function VehiclesPage() {
         <div className="px-4 py-4 space-y-3">
           <div className="flex items-center justify-between">
             <h1 className="text-2xl font-bold">Vehicles</h1>
-            <Link href="/vehicles/register">
-              <Button size="sm" className="btn-gold rounded-xl h-9 px-4">
-                <Plus className="w-4 h-4 mr-1.5" />
-                Add
+            <div className="flex items-center gap-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                className="rounded-xl h-9 px-3"
+                onClick={async () => {
+                  setRefreshing(true);
+                  await refreshVehicles();
+                  setRefreshing(false);
+                }}
+                disabled={refreshing}
+              >
+                <RefreshCw className={`w-4 h-4 ${refreshing ? 'animate-spin' : ''}`} />
               </Button>
-            </Link>
+              <Link href="/vehicles/register">
+                <Button size="sm" className="btn-gold rounded-xl h-9 px-4">
+                  <Plus className="w-4 h-4 mr-1.5" />
+                  Add
+                </Button>
+              </Link>
+            </div>
           </div>
 
           {/* Search */}

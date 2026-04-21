@@ -114,43 +114,70 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     s.currentUser = staffUser;
     s.staffUsers = [staffUser];
 
+    const isValidUUID = (id: string | undefined) =>
+      /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
+
+    const isAdmin = staffUser.role === 'super_user';
+
+    // ── Step 1: facilities + companies in parallel ─────────────────────────
+    // Facilities must resolve before cars so we have the correct facilityId.
+    // Admin users can list all; regular users fetch only their own facility.
     await Promise.allSettled([
-      // Companies
-      companiesApi.list({ only_active: true }).then(list => {
-        s.companies = list.map(companyReadToCompany);
-      }),
-      // Facilities
-      facilitiesApi.list({ only_active: true }).then(list => {
-        s.facilities = list.map(facilityReadToFacility);
-        // If facilityId not set on user or is invalid UUID, use first facility
-        const isValidUUID = (id: string | undefined) => /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i.test(id || '');
-        if (!isValidUUID(staffUser.facilityId) && list.length > 0) {
-          staffUser.facilityId = list[0].id;
-          if (s.currentUser) s.currentUser.facilityId = list[0].id;
+      isAdmin
+        ? companiesApi.list({ only_active: true }).then(list => {
+            s.companies = list.map(companyReadToCompany);
+            console.log('[GF] companies loaded:', list.length);
+          }).catch(e => console.warn('[GF] companies error:', e?.message))
+        : Promise.resolve(),
+
+      isAdmin
+        ? facilitiesApi.list({ only_active: true }).then(list => {
+            s.facilities = list.map(facilityReadToFacility);
+            console.log('[GF] facilities loaded:', list.length, list.map(f => f.id));
+            if (!isValidUUID(staffUser.facilityId) && list.length > 0) {
+              staffUser.facilityId = list[0].id;
+              if (s.currentUser) s.currentUser.facilityId = list[0].id;
+            }
+          }).catch(e => console.warn('[GF] facilities error:', e?.message))
+        : isValidUUID(user.place)
+          ? facilitiesApi.getById(user.place!).then(f => {
+              s.facilities = [facilityReadToFacility(f)];
+              console.log('[GF] facility loaded (own):', f.id);
+            }).catch(e => console.warn('[GF] facility getById error:', e?.message))
+          : Promise.resolve(),
+    ]);
+
+    console.log('[GF] staffUser.facilityId after step 1:', staffUser.facilityId, 'isValid:', isValidUUID(staffUser.facilityId));
+
+    // ── Step 2: cars + users in parallel (facilityId is now correct) ───────
+    await Promise.allSettled([
+      // Cars: try facilities/{id}/cars first (most complete), then /cars/, then /cars/me
+      // Cars: Use carsApi.list({ items: 100 }) directly as it reliably returns the dataset
+      (async () => {
+        let items: any[] = [];
+        try {
+          const r = await carsApi.list({ items: 100 });
+          items = r.items || [];
+          console.log('[GF] /cars/ fallback items:', items.length);
+        } catch (e: any) {
+          console.warn('[GF] /cars/ error:', e?.message);
         }
-      }),
-      // Cars → Vehicles: try list first (broader), fall back to /cars/me
-      Promise.any([
-        carsApi.list({ items: 200 }).then(r => Array.isArray(r) ? r : r.items ?? []),
-        carsApi.getMe(),
-      ]).catch(() => [] as any[]).then((items: any[]) => {
+
+        console.log('[GF] total vehicles after load:', items.length);
+
         let localPhotos: Record<string, any> = {};
         if (typeof window !== 'undefined') {
           try { localPhotos = JSON.parse(localStorage.getItem('GF_VEHICLE_PHOTOS') || '{}'); } catch {}
         }
 
-        const rawItems = Array.isArray(items) ? items : (items as any).items ?? [];
-        s.vehicles = rawItems.map((c: any) => {
-          // Always assign current facility if API car has no facility_id
+        s.vehicles = items.map((c: any) => {
           const facilityId = c.facility_id || staffUser.facilityId;
           const v = carToVehicle({ ...c, facility_id: facilityId }, staffUser.facilityId);
-          if (localPhotos[v.id]) {
-            v.initialDocumentation = localPhotos[v.id];
-          }
+          if (localPhotos[v.id]) v.initialDocumentation = localPhotos[v.id];
           return v;
         });
 
-        // Background fetch for authenticated backend photos
+        // Background: load survey photos
         surveyCarsApi.list().then(surveyCarsData => {
           setStore(currentStore => {
             if (!currentStore) return currentStore;
@@ -158,10 +185,11 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
               ...currentStore,
               vehicles: currentStore.vehicles.map(v => {
                 const apiPhotos = (surveyCarsData as any[]).filter((sc: any) => sc.car_id === v.id);
-                // Only override if we don't have local photos and API photos exist
                 if (!localPhotos[v.id] && apiPhotos.length > 0) {
                   const validUrl = (sc: any) => sc.file_url && sc.file_url !== 'string';
-                  const byPos = (pos: string) => apiPhotos.filter((sc: any) => sc.view_position === pos && validUrl(sc)).map((sc: any) => formatSurveyPhotoUrl(sc.file_url));
+                  const byPos = (pos: string) => apiPhotos
+                    .filter((sc: any) => sc.view_position === pos && validUrl(sc))
+                    .map((sc: any) => formatSurveyPhotoUrl(sc.file_url));
                   return {
                     ...v,
                     initialDocumentation: {
@@ -178,34 +206,30 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
             };
           });
         }).catch(() => {});
-      }),
-        // Users → split into StaffUsers (admins) and Clients (members)
-      usersApi.list({ items: 100 }).then(({ items }) => {
-        const adminTypes = ['admin', 'adminuser', 'super_user'];
-        const staff = items
-          .filter(u => adminTypes.includes(u.type || ''))
-          .map(u => userToStaffUser(u, staffUser.facilityId));
-        const apiClients = items
-          .filter(u => !adminTypes.includes(u.type || ''))
-          .map(u => userToClient(u, staffUser.facilityId));
+      })(),
 
-        if (staff.length > 0) s.staffUsers = staff;
-        if (apiClients.length > 0) {
-          s.clients = apiClients;
-        } else {
-          // If no clients in API, ensure local mock clients use the correct facilityId
-          s.clients = s.clients.map(c => ({
-            ...c,
-            facilityId: staffUser.facilityId
-          }));
-        }
-      }).catch(() => {
-        // If API fails, also ensure local mock clients match the facility
-        s.clients = s.clients.map(c => ({
-          ...c,
-          facilityId: staffUser.facilityId
-        }));
-      }),
+      // Users → split into StaffUsers (admins) and Clients (members)
+      // Only admin users can list all users; skip this call for regular users.
+      isAdmin
+        ? usersApi.list({ items: 100 }).then(({ items }) => {
+            const adminTypes = ['admin', 'adminuser', 'super_user', 'AdminUser', 'Admin'];
+            const staff = items
+              .filter(u => adminTypes.includes(u.type || ''))
+              .map(u => userToStaffUser(u, staffUser.facilityId));
+            const apiClients = items
+              .filter(u => !adminTypes.includes(u.type || ''))
+              .map(u => userToClient(u, staffUser.facilityId));
+
+            if (staff.length > 0) s.staffUsers = staff;
+            if (apiClients.length > 0) {
+              s.clients = apiClients;
+            } else {
+              s.clients = s.clients.map(c => ({ ...c, facilityId: staffUser.facilityId }));
+            }
+          }).catch(() => {
+            s.clients = s.clients.map(c => ({ ...c, facilityId: staffUser.facilityId }));
+          })
+        : Promise.resolve(),
     ]);
 
     return s;
@@ -224,6 +248,9 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
         } catch {
           tokens.clear();
           setStore(emptyStore());
+          if (typeof window !== 'undefined' && !window.location.pathname.startsWith('/login')) {
+            window.location.href = '/login';
+          }
         }
       } else {
         setStore(emptyStore());
@@ -269,11 +296,20 @@ export function AppProvider({ children }: { children: React.ReactNode }) {
     if (!store) return;
     try {
       const facilityId = store.currentUser?.facilityId;
-      const raw = await Promise.any([
-        carsApi.list({ items: 200 }).then(r => Array.isArray(r) ? r : r.items ?? []),
+      const [listResult, meResult] = await Promise.allSettled([
+        carsApi.list({ items: 100 }),
         carsApi.getMe(),
-      ]).catch(() => [] as any[]);
-      const items: any[] = Array.isArray(raw) ? raw : (raw as any).items ?? [];
+      ]);
+      let items: any[] = [];
+      if (listResult.status === 'fulfilled') {
+        const r = listResult.value as any;
+        const arr = Array.isArray(r) ? r : (r.items ?? r.data ?? []);
+        if (arr.length > 0) items = arr;
+      }
+      if (items.length === 0 && meResult.status === 'fulfilled') {
+        const r = meResult.value as any;
+        items = Array.isArray(r) ? r : (r.data ?? r.items ?? []);
+      }
       setStore(prev => {
         if (!prev) return prev;
         let localPhotos: Record<string, any> = {};

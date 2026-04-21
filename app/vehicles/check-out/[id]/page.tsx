@@ -12,16 +12,16 @@ import { carsApi } from '@/lib/api/cars';
 import { vehicleToCarUpdate } from '@/lib/api/mappers';
 
 const CAR_PARTS = [
-  { id: 'front_bumper', label: 'Front Bumper', x: 50, y: 10 },
-  { id: 'hood', label: 'Hood', x: 50, y: 25 },
-  { id: 'windshield', label: 'Windshield', x: 50, y: 35 },
-  { id: 'roof', label: 'Roof', x: 50, y: 50 },
-  { id: 'left_front_door', label: 'Left Front Door', x: 20, y: 50 },
-  { id: 'left_rear_door', label: 'Left Rear Door', x: 20, y: 65 },
-  { id: 'right_front_door', label: 'Right Front Door', x: 80, y: 50 },
-  { id: 'right_rear_door', label: 'Right Rear Door', x: 80, y: 65 },
-  { id: 'rear_bumper', label: 'Rear Bumper', x: 50, y: 90 },
-  { id: 'trunk', label: 'Trunk', x: 50, y: 80 },
+  { id: 'front_bumper', label: 'Front Bumper', x: 50, y: -8 },
+  { id: 'hood', label: 'Hood', x: 50, y: 4 },
+  { id: 'windshield', label: 'Windshield', x: 50, y: 22 },
+  { id: 'roof', label: 'Roof', x: 50, y: 45 },
+  { id: 'left_front_door', label: 'Left Front Door', x: 30, y: 35 },
+  { id: 'left_rear_door', label: 'Left Rear Door', x: 30, y: 60 },
+  { id: 'right_front_door', label: 'Right Front Door', x: 70, y: 35 },
+  { id: 'right_rear_door', label: 'Right Rear Door', x: 70, y: 60 },
+  { id: 'trunk', label: 'Trunk', x: 50, y: 90 },
+  { id: 'rear_bumper', label: 'Rear Bumper', x: 50, y: 106 },
 ];
 
 // ─── Compact vehicle summary shown throughout check-out ───────────────────────
@@ -135,7 +135,9 @@ export default function CheckOutPage() {
 
   // Inspection state
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
-  const [currentDamage, setCurrentDamage] = useState<{ part: string; photos: string[]; notes: string } | null>(null);
+  const [okParts, setOkParts] = useState<string[]>([]);
+  const [partData, setPartData] = useState<Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }>>({});
+  const [currentDamage, setCurrentDamage] = useState<{ part: string; photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' } | null>(null);
   const [newDamages, setNewDamages] = useState<Array<{ part: string; photos: string[]; notes: string; severity: 'low' | 'medium' | 'high' }>>([]);
   const [resolvedDamageIds, setResolvedDamageIds] = useState<string[]>([]);
 
@@ -144,20 +146,99 @@ export default function CheckOutPage() {
     setVehicle(vehicleData || null);
   }, [params.id, store.vehicles]);
 
+  // Pre-load diagram state from last check-in event (okParts, partData, damages)
+  const [preloaded, setPreloaded] = useState(false);
+  useEffect(() => {
+    if (!vehicle || preloaded) return;
+
+    const lastArrival = [...store.vehicleEvents]
+      .filter(e => e.vehicleId === vehicle.id && e.eventType === 'arrival_after_use')
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+    const newPartData: Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }> = {};
+    const newSelected: string[] = [];
+    const newOk: string[] = [];
+
+    // 1) Restore partData and okParts saved on the event
+    if (lastArrival?.partData) {
+      Object.assign(newPartData, lastArrival.partData);
+    }
+    if (lastArrival?.okParts) {
+      newOk.push(...lastArrival.okParts);
+    }
+
+    // 2) Open damages → red points (override any OK if damage is still open)
+    const openDamages = store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open');
+    openDamages.forEach(d => {
+      newPartData[d.carPart] = {
+        photos: d.photos || [],
+        notes: d.description || '',
+        severity: d.severity,
+      };
+      newSelected.push(d.carPart);
+      // Remove from okParts if it was there
+      const okIdx = newOk.indexOf(d.carPart);
+      if (okIdx !== -1) newOk.splice(okIdx, 1);
+    });
+
+    if (Object.keys(newPartData).length > 0 || newOk.length > 0) {
+      setPartData(newPartData);
+      setSelectedParts(newSelected);
+      setOkParts(newOk);
+    }
+    setPreloaded(true);
+  }, [vehicle, store.damages, store.vehicleEvents, preloaded]);
+
   const handlePartClick = (partId: string) => {
-    if (selectedParts.includes(partId)) {
+    const saved = partData[partId];
+    if (saved) {
+      setCurrentDamage({ part: partId, photos: saved.photos || [], notes: saved.notes || '', severity: saved.severity });
+    } else {
+      // Check if this part has an existing open damage from previous check-in
+      const existingDmg = existingOpenDamages.find(d => d.carPart === partId);
+      if (existingDmg) {
+        setCurrentDamage({
+          part: partId,
+          photos: existingDmg.photos || [],
+          notes: existingDmg.description || '',
+          severity: existingDmg.severity as 'low' | 'medium' | 'high' | undefined,
+        });
+      } else {
+        setCurrentDamage({ part: partId, photos: [], notes: '', severity: undefined });
+      }
+    }
+    setStep('capture-damage');
+  };
+
+  const handleMarkOk = () => {
+    if (currentDamage) {
+      const partId = currentDamage.part;
+      setPartData({ ...partData, [partId]: { photos: currentDamage.photos, notes: currentDamage.notes } });
+      if (currentDamage.photos.length > 0) {
+        setOkParts([...okParts.filter(p => p !== partId), partId]);
+      } else {
+        setOkParts(okParts.filter(p => p !== partId));
+      }
       setSelectedParts(selectedParts.filter(p => p !== partId));
       setNewDamages(newDamages.filter(d => d.part !== partId));
-    } else {
-      setSelectedParts([...selectedParts, partId]);
-      setCurrentDamage({ part: partId, photos: [], notes: '' });
-      setStep('capture-damage');
+      // If this part had an existing open damage, mark it as resolved
+      const existingDmg = existingOpenDamages.find(d => d.carPart === partId);
+      if (existingDmg && !resolvedDamageIds.includes(existingDmg.id)) {
+        setResolvedDamageIds([...resolvedDamageIds, existingDmg.id]);
+      }
+      setCurrentDamage(null);
+      setStep('inspection');
     }
   };
 
-  const handleSaveDamage = (severity: 'low' | 'medium' | 'high') => {
-    if (currentDamage) {
-      setNewDamages([...newDamages, { ...currentDamage, severity }]);
+  const handleSaveDamage = () => {
+    if (currentDamage && currentDamage.severity) {
+      const partId = currentDamage.part;
+      const damage = { ...currentDamage, severity: currentDamage.severity };
+      setPartData({ ...partData, [partId]: { photos: currentDamage.photos, notes: currentDamage.notes, severity: currentDamage.severity } });
+      setSelectedParts([...selectedParts.filter(p => p !== partId), partId]);
+      setOkParts(okParts.filter(p => p !== partId));
+      setNewDamages([...newDamages.filter(d => d.part !== partId), damage]);
       setCurrentDamage(null);
       setStep('inspection');
     }
@@ -165,7 +246,10 @@ export default function CheckOutPage() {
 
   const handleSkipDamage = () => {
     if (currentDamage) {
-      setSelectedParts(selectedParts.filter(p => p !== currentDamage.part));
+      // Preserve any photos/notes taken before going back
+      if (currentDamage.photos.length > 0 || currentDamage.notes) {
+        setPartData({ ...partData, [currentDamage.part]: { photos: currentDamage.photos, notes: currentDamage.notes, severity: currentDamage.severity } });
+      }
       setCurrentDamage(null);
       setStep('inspection');
     }
@@ -189,7 +273,7 @@ export default function CheckOutPage() {
       // Update vehicle status via API — pass full vehicle to preserve nickname JSON
       await carsApi.update(vehicle.id, vehicleToCarUpdate({ ...vehicle, status: 'checked_out', statusUpdatedAt: timestamp }));
 
-      // Create vehicle event
+      // Create vehicle event — include okParts and partData so next check-in can restore diagram
       const newEvent: VehicleEvent = {
         id: eventId,
         eventType: 'departure_after_use',
@@ -201,6 +285,8 @@ export default function CheckOutPage() {
         notes: resolvedDamageIds.length > 0
           ? `Resolved ${resolvedDamageIds.length} damage(s). ${newDamages.length > 0 ? `New: ${newDamages.map(d => d.part).join(', ')}.` : ''}`
           : '',
+        okParts: [...okParts],
+        partData: { ...partData },
       };
       setVehicleEvents([...store.vehicleEvents, newEvent]);
 
@@ -337,22 +423,22 @@ export default function CheckOutPage() {
                   onClick={() => setShowCheckInSummary(v => !v)}
                   className="w-full flex items-center justify-between p-4 text-left hover:bg-muted/20 transition-colors"
                 >
-                  <span className="flex items-center gap-2 text-sm font-semibold">
-                    <ClipboardList className="w-4 h-4 text-accent" />
-                    Last Check-In Summary
+                  <div className="flex items-center gap-2 min-w-0">
+                    <ClipboardList className="w-4 h-4 text-accent flex-shrink-0" />
+                    <span className="text-sm font-semibold whitespace-nowrap">Last Check-In</span>
                     {existingOpenDamages.length > 0 ? (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20">
-                        {existingOpenDamages.length} open damage{existingOpenDamages.length !== 1 ? 's' : ''}
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-destructive/10 text-destructive border border-destructive/20 whitespace-nowrap">
+                        {existingOpenDamages.length} open
                       </span>
                     ) : (
-                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20">
-                        No damages
+                      <span className="text-[10px] font-semibold px-2 py-0.5 rounded-full bg-success/10 text-success border border-success/20 whitespace-nowrap">
+                        OK
                       </span>
                     )}
-                  </span>
+                  </div>
                   {showCheckInSummary
-                    ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0" />
-                    : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0" />
+                    ? <ChevronUp className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
+                    : <ChevronDown className="w-4 h-4 text-muted-foreground flex-shrink-0 ml-2" />
                   }
                 </button>
 
@@ -477,111 +563,37 @@ export default function CheckOutPage() {
         <div className="p-4 space-y-4">
           <VehicleSummary vehicle={vehicle} ownerName={ownerName} />
 
-          {/* Existing open damages — mark resolved */}
-          {existingOpenDamages.length > 0 && (
-            <div className="card-premium p-4 space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
-                Previous Damages — Mark if Resolved
-              </h3>
-              <div className="space-y-2">
-                {existingOpenDamages.map(damage => {
-                  const isResolved = resolvedDamageIds.includes(damage.id);
-                  return (
-                    <button
-                      key={damage.id}
-                      onClick={() => toggleResolved(damage.id)}
-                      className={`w-full flex items-center justify-between p-3 rounded-xl border transition-all text-left ${
-                        isResolved
-                          ? 'bg-success/5 border-success/30'
-                          : 'bg-destructive/[0.04] border-destructive/10'
-                      }`}
-                    >
-                      <div className="flex items-center gap-2">
-                        {isResolved
-                          ? <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                          : <AlertTriangle className="w-4 h-4 text-destructive flex-shrink-0" />
-                        }
-                        <div>
-                          <p className={`text-sm font-medium capitalize ${isResolved ? 'line-through text-muted-foreground' : ''}`}>
-                            {damage.carPart.replace(/_/g, ' ')}
-                          </p>
-                          {damage.description && (
-                            <p className="text-xs text-muted-foreground line-clamp-1">{damage.description}</p>
-                          )}
-                        </div>
-                      </div>
-                      <div className="flex items-center gap-2 flex-shrink-0">
-                        <span className={`text-[10px] font-semibold px-2 py-0.5 rounded-full capitalize ${
-                          damage.severity === 'high'
-                            ? 'bg-destructive/10 text-destructive'
-                            : damage.severity === 'medium'
-                            ? 'bg-yellow-500/10 text-yellow-700'
-                            : 'bg-muted text-muted-foreground'
-                        }`}>
-                          {damage.severity}
-                        </span>
-                        <span className={`text-xs font-semibold ${isResolved ? 'text-success' : 'text-muted-foreground'}`}>
-                          {isResolved ? 'Resolved' : 'Tap to resolve'}
-                        </span>
-                      </div>
-                    </button>
-                  );
-                })}
-              </div>
-            </div>
-          )}
-
           {/* Car diagram — new damage */}
           <div className="card-premium p-4 space-y-3">
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">
               New Damage — Tap to Mark
             </h3>
-            <div className="relative w-full aspect-[2/3] bg-muted/20 rounded-lg">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <g className="text-muted-foreground/50" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  {/* Main car body - top view */}
-                  <path d="M36,6 L64,6 C68,6 72,8 73,11 L76,24 L78,38 L78,62 L76,76 L73,89 C72,92 68,94 64,94 L36,94 C32,94 28,92 27,89 L24,76 L22,62 L22,38 L24,24 L27,11 C28,8 32,6 36,6 Z" />
-                  {/* Front windshield */}
-                  <path d="M38,19 L62,19 L61,32 L39,32 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
-                  {/* Rear window */}
-                  <path d="M39,68 L61,68 L62,81 L38,81 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
-                  {/* Cabin roof */}
-                  <rect x="38" y="32" width="24" height="36" rx="3" fill="currentColor" fillOpacity="0.05" strokeWidth="0.8" />
-                  {/* Front left wheel */}
-                  <rect x="8" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Front right wheel */}
-                  <rect x="79" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Rear left wheel */}
-                  <rect x="8" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Rear right wheel */}
-                  <rect x="79" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Left mirror */}
-                  <path d="M22,34 L15,37 L15,43 L22,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
-                  {/* Right mirror */}
-                  <path d="M78,34 L85,37 L85,43 L78,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
-                  {/* Door separator */}
-                  <path d="M22,58 L78,58" strokeWidth="0.6" strokeDasharray="2,2" opacity="0.5" />
-                  {/* Hood lines */}
-                  <path d="M42,10 L42,22 M58,10 L58,22" strokeWidth="0.5" opacity="0.35" />
-                  {/* Trunk lines */}
-                  <path d="M42,78 L42,90 M58,78 L58,90" strokeWidth="0.5" opacity="0.35" />
-                </g>
-
-                {CAR_PARTS.map(part => (
-                  <circle
-                    key={part.id}
-                    cx={part.x}
-                    cy={part.y}
-                    r="4"
-                    className={`cursor-pointer transition-all ${
-                      selectedParts.includes(part.id)
-                        ? 'fill-destructive stroke-destructive'
-                        : 'fill-muted stroke-muted-foreground hover:fill-destructive/50'
-                    }`}
-                    strokeWidth="1"
-                    onClick={() => handlePartClick(part.id)}
-                  />
-                ))}
+            <div className="relative w-full aspect-[2/3] bg-muted/20 rounded-lg overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/auto.png" alt="Vehicle inspection" className="w-full h-full object-contain" />
+              <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
+                {CAR_PARTS.map(part => {
+                  const hasExistingDamage = existingOpenDamages.some(d => d.carPart === part.id);
+                  return (
+                    <circle
+                      key={part.id}
+                      cx={part.x}
+                      cy={part.y}
+                      r="4"
+                      className={`cursor-pointer transition-all ${
+                        okParts.includes(part.id)
+                          ? 'fill-green-500 stroke-green-600'
+                          : selectedParts.includes(part.id)
+                          ? 'fill-destructive stroke-destructive'
+                          : hasExistingDamage
+                          ? 'fill-destructive stroke-destructive'
+                          : 'fill-muted stroke-muted-foreground hover:fill-destructive/50'
+                      }`}
+                      strokeWidth="1"
+                      onClick={() => handlePartClick(part.id)}
+                    />
+                  );
+                })}
               </svg>
             </div>
 
@@ -623,7 +635,7 @@ export default function CheckOutPage() {
               <ArrowLeft className="w-5 h-5" />
             </Button>
             <div>
-              <h1 className="font-semibold">Document New Damage</h1>
+              <h1 className="font-semibold">New Event</h1>
               <p className="text-sm text-white/70">{part?.label}</p>
             </div>
           </div>
@@ -651,16 +663,37 @@ export default function CheckOutPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Severity</label>
             <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" onClick={() => handleSaveDamage('low')} className="h-12">Low</Button>
-              <Button variant="outline" onClick={() => handleSaveDamage('medium')} className="h-12">Medium</Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSaveDamage('high')}
-                className="h-12 border-destructive text-destructive hover:bg-destructive hover:text-white"
-              >
-                High
-              </Button>
+              {(['low', 'medium', 'high'] as const).map(sev => (
+                <Button
+                  key={sev}
+                  variant="outline"
+                  onClick={() => setCurrentDamage({ ...currentDamage, severity: sev })}
+                  className={`h-12 ${
+                    currentDamage.severity === sev
+                      ? sev === 'high' ? 'bg-destructive text-white border-destructive'
+                        : sev === 'medium' ? 'bg-yellow-500 text-white border-yellow-500'
+                        : 'bg-blue-500 text-white border-blue-500'
+                      : sev === 'high' ? 'border-destructive text-destructive hover:bg-destructive hover:text-white'
+                      : ''
+                  }`}
+                >
+                  {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                </Button>
+              ))}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button variant="outline" onClick={handleMarkOk} className="h-12 border-green-500 text-green-600 hover:bg-green-500 hover:text-white">
+              OK — No Damage
+            </Button>
+            <Button
+              onClick={handleSaveDamage}
+              disabled={!currentDamage.severity}
+              className="h-12 btn-dark"
+            >
+              Confirm
+            </Button>
           </div>
         </div>
       </div>
@@ -669,8 +702,11 @@ export default function CheckOutPage() {
 
   // ── STEP: review ────────────────────────────────────────────────────────────
   if (step === 'review') {
-    const hasChanges = newDamages.length > 0 || resolvedDamageIds.length > 0;
-    const unresolvedCount = existingOpenDamages.filter(d => !resolvedDamageIds.includes(d.id)).length;
+    // Counts based on actual diagram state
+    const openCount = selectedParts.length;      // red points = open/unresolved damages
+    const okCount = okParts.length;              // green points = OK / resolved
+    const newCount = newDamages.length;          // new damages added in this session
+    const noIssues = openCount === 0 && newCount === 0;
 
     return (
       <div className="min-h-screen bg-background pb-20">
@@ -694,70 +730,77 @@ export default function CheckOutPage() {
             <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Exit Summary</h3>
 
             <div className="grid grid-cols-3 gap-3 text-center">
-              <div className={`p-3 rounded-xl ${unresolvedCount > 0 ? 'bg-destructive/5 border border-destructive/20' : 'bg-success/5 border border-success/20'}`}>
-                <p className={`text-2xl font-bold ${unresolvedCount > 0 ? 'text-destructive' : 'text-success'}`}>{unresolvedCount}</p>
+              <div className={`p-3 rounded-xl ${openCount > 0 ? 'bg-destructive/5 border border-destructive/20' : 'bg-success/5 border border-success/20'}`}>
+                <p className={`text-2xl font-bold ${openCount > 0 ? 'text-destructive' : 'text-success'}`}>{openCount}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">Open Damages</p>
               </div>
-              <div className={`p-3 rounded-xl ${newDamages.length > 0 ? 'bg-destructive/5 border border-destructive/20' : 'bg-muted/30 border border-border/40'}`}>
-                <p className={`text-2xl font-bold ${newDamages.length > 0 ? 'text-destructive' : 'text-foreground'}`}>{newDamages.length}</p>
+              <div className={`p-3 rounded-xl ${newCount > 0 ? 'bg-destructive/5 border border-destructive/20' : 'bg-muted/30 border border-border/40'}`}>
+                <p className={`text-2xl font-bold ${newCount > 0 ? 'text-destructive' : 'text-foreground'}`}>{newCount}</p>
                 <p className="text-[10px] text-muted-foreground mt-0.5">New Damages</p>
               </div>
-              <div className={`p-3 rounded-xl ${resolvedDamageIds.length > 0 ? 'bg-success/5 border border-success/20' : 'bg-muted/30 border border-border/40'}`}>
-                <p className={`text-2xl font-bold ${resolvedDamageIds.length > 0 ? 'text-success' : 'text-foreground'}`}>{resolvedDamageIds.length}</p>
-                <p className="text-[10px] text-muted-foreground mt-0.5">Resolved</p>
+              <div className={`p-3 rounded-xl ${okCount > 0 ? 'bg-success/5 border border-success/20' : 'bg-muted/30 border border-border/40'}`}>
+                <p className={`text-2xl font-bold ${okCount > 0 ? 'text-success' : 'text-foreground'}`}>{okCount}</p>
+                <p className="text-[10px] text-muted-foreground mt-0.5">OK / Resolved</p>
               </div>
             </div>
 
-            {!hasChanges && existingOpenDamages.length === 0 && (
+            {noIssues && (
               <div className="flex items-center gap-2 p-3 rounded-xl bg-success/5 border border-success/20">
                 <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                <p className="text-sm text-success font-medium">Vehicle exits clean — no damages</p>
+                <p className="text-sm text-success font-medium">Vehicle exits clean — no open damages</p>
               </div>
             )}
           </div>
 
-          {/* New damages detail */}
-          {newDamages.length > 0 && (
+          {/* Open damages detail (red points) */}
+          {selectedParts.length > 0 && (
             <div className="card-premium p-4 space-y-3">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">New Damages Recorded</h3>
-              {newDamages.map((damage, index) => {
-                const part = CAR_PARTS.find(p => p.id === damage.part);
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-destructive">Open Damages</h3>
+              {selectedParts.map(partId => {
+                const part = CAR_PARTS.find(p => p.id === partId);
+                const data = partData[partId];
                 return (
-                  <div key={index} className="space-y-2">
+                  <div key={partId} className="space-y-2">
                     <div className="flex items-center justify-between">
                       <p className="text-sm font-medium">{part?.label}</p>
-                      <span className={`text-xs px-2 py-1 rounded-full ${
-                        damage.severity === 'high' ? 'bg-destructive/10 text-destructive' :
-                        damage.severity === 'medium' ? 'bg-yellow-500/10 text-yellow-700' :
-                        'bg-muted text-muted-foreground'
-                      }`}>
-                        {damage.severity}
-                      </span>
+                      {data?.severity && (
+                        <span className={`text-xs px-2 py-1 rounded-full ${
+                          data.severity === 'high' ? 'bg-destructive/10 text-destructive' :
+                          data.severity === 'medium' ? 'bg-yellow-500/10 text-yellow-700' :
+                          'bg-muted text-muted-foreground'
+                        }`}>
+                          {data.severity}
+                        </span>
+                      )}
                     </div>
-                    {damage.photos.length > 0 && (
+                    {data?.photos && data.photos.length > 0 && (
                       <div className="flex gap-2 overflow-x-auto">
-                        {damage.photos.map((photo, i) => (
+                        {data.photos.map((photo, i) => (
+                          // eslint-disable-next-line @next/next/no-img-element
                           <img key={i} src={photo} alt="" className="w-20 h-20 object-cover rounded-lg flex-shrink-0" />
                         ))}
                       </div>
                     )}
-                    {damage.notes && <p className="text-xs text-muted-foreground">{damage.notes}</p>}
+                    {data?.notes && <p className="text-xs text-muted-foreground">{data.notes}</p>}
                   </div>
                 );
               })}
             </div>
           )}
 
-          {/* Resolved damages detail */}
-          {resolvedDamageIds.length > 0 && (
+          {/* OK / Resolved detail (green points) */}
+          {okParts.length > 0 && (
             <div className="card-premium p-4 space-y-2">
-              <h3 className="text-sm font-semibold uppercase tracking-wider text-muted-foreground">Damages Marked Resolved</h3>
-              {existingOpenDamages.filter(d => resolvedDamageIds.includes(d.id)).map(damage => (
-                <div key={damage.id} className="flex items-center gap-2 p-2 rounded-lg bg-success/5">
-                  <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
-                  <p className="text-sm capitalize line-through text-muted-foreground">{damage.carPart.replace(/_/g, ' ')}</p>
-                </div>
-              ))}
+              <h3 className="text-sm font-semibold uppercase tracking-wider text-success">OK / Resolved</h3>
+              {okParts.map(partId => {
+                const part = CAR_PARTS.find(p => p.id === partId);
+                return (
+                  <div key={partId} className="flex items-center gap-2 p-2 rounded-lg bg-success/5">
+                    <CheckCircle2 className="w-4 h-4 text-success flex-shrink-0" />
+                    <p className="text-sm">{part?.label}</p>
+                  </div>
+                );
+              })}
             </div>
           )}
 

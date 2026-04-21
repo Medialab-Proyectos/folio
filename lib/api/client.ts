@@ -1,23 +1,52 @@
 // On the browser we always go through our own HTTPS proxy to avoid Mixed Content.
 // On the server (SSR/API routes) we call the backend directly.
-const BASE_URL =
-  typeof window !== 'undefined'
-    ? '/api/proxy'
-    : (process.env.BACKEND_URL ?? 'http://34.233.63.96:8001');
+// NEXT_PUBLIC_API_URL is inlined into the client bundle at build time by Next.js,
+// so it is always '/api/proxy' in the browser — no typeof window ambiguity.
+function getBaseUrl(): string {
+  // NEXT_PUBLIC_API_URL is inlined as '/api/proxy' in the browser bundle by Next.js
+  const base = process.env.NEXT_PUBLIC_API_URL
+    ?? (typeof window !== 'undefined' ? '/api/proxy' : (process.env.BACKEND_URL ?? 'http://34.233.63.96:8001'));
+  return base;
+}
+
+// One-time log so we can verify which base URL is active in the browser
+if (typeof window !== 'undefined') {
+  console.log('[GF] API base URL:', getBaseUrl(), '| NEXT_PUBLIC_API_URL:', process.env.NEXT_PUBLIC_API_URL);
+}
 
 const TOKEN_KEY = 'access_token';
 const REFRESH_KEY = 'refresh_token';
+// Bump this value whenever the backend URL changes to force all users to re-login
+const AUTH_VERSION_KEY = 'auth_api_version';
+const CURRENT_AUTH_VERSION = 'v1-34233';
+
+// If the stored version doesn't match, wipe old tokens so users re-authenticate
+if (typeof window !== 'undefined') {
+  const storedVersion = localStorage.getItem(AUTH_VERSION_KEY);
+  if (storedVersion !== CURRENT_AUTH_VERSION) {
+    localStorage.removeItem(TOKEN_KEY);
+    localStorage.removeItem(REFRESH_KEY);
+    localStorage.setItem(AUTH_VERSION_KEY, CURRENT_AUTH_VERSION);
+  }
+}
 
 // ─── Token helpers ────────────────────────────────────────────────────────────
 
 export const tokens = {
-  getAccess: (): string | null =>
-    typeof window !== 'undefined' ? localStorage.getItem(TOKEN_KEY) : null,
-  getRefresh: (): string | null =>
-    typeof window !== 'undefined' ? localStorage.getItem(REFRESH_KEY) : null,
+  getAccess: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(TOKEN_KEY);
+    return v && v !== 'undefined' && v !== 'null' ? v : null;
+  },
+  getRefresh: (): string | null => {
+    if (typeof window === 'undefined') return null;
+    const v = localStorage.getItem(REFRESH_KEY);
+    return v && v !== 'undefined' && v !== 'null' ? v : null;
+  },
   set: (access: string, refresh?: string) => {
+    if (!access || access === 'undefined' || access === 'null') return;
     localStorage.setItem(TOKEN_KEY, access);
-    if (refresh) localStorage.setItem(REFRESH_KEY, refresh);
+    if (refresh && refresh !== 'undefined' && refresh !== 'null') localStorage.setItem(REFRESH_KEY, refresh);
   },
   clear: () => {
     localStorage.removeItem(TOKEN_KEY);
@@ -36,30 +65,42 @@ interface RequestOptions extends Omit<RequestInit, 'body'> {
   auth?: boolean;
 }
 
+// Mutex: prevents multiple concurrent 401s from each triggering a separate
+// refresh attempt (the second would fail because refresh tokens are single-use).
+let _refreshPromise: Promise<boolean> | null = null;
+
 async function tryRefreshToken(): Promise<boolean> {
+  if (_refreshPromise) return _refreshPromise;
+
   const refreshToken = tokens.getRefresh();
   if (!refreshToken) return false;
 
-  try {
-    const res = await fetch(`${BASE_URL}/auth/refresh`, {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ refresh_token: refreshToken }),
-    });
-    if (!res.ok) return false;
-    const data = await res.json();
-    tokens.set(data.access_token);
-    return true;
-  } catch {
-    return false;
-  }
+  _refreshPromise = (async () => {
+    try {
+      const res = await fetch(`${getBaseUrl()}/auth/refresh`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ refresh_token: refreshToken }),
+      });
+      if (!res.ok) return false;
+      const data = await res.json();
+      tokens.set(data.access_token);
+      return true;
+    } catch {
+      return false;
+    } finally {
+      _refreshPromise = null;
+    }
+  })();
+
+  return _refreshPromise;
 }
 
 export async function apiRequest<T>(
   path: string,
   { body, params, auth = true, method = 'GET', headers = {}, ...rest }: RequestOptions = {}
 ): Promise<T> {
-  const rawUrl = `${BASE_URL}${path}`;
+  const rawUrl = `${getBaseUrl()}${path}`;
   const url = rawUrl.startsWith('http')
     ? new URL(rawUrl)
     : new URL(rawUrl, typeof window !== 'undefined' ? window.location.origin : 'http://localhost:3000');
@@ -77,6 +118,7 @@ export async function apiRequest<T>(
     }
     if (auth) {
       const token = tokens.getAccess();
+      console.log(`[GF] ${method} ${path} — token present: ${!!token}`, token ? token.slice(0, 20) + '...' : 'MISSING');
       if (token) h['Authorization'] = `Bearer ${token}`;
     }
     return h;
@@ -111,6 +153,7 @@ export async function apiRequest<T>(
     } catch {
       // ignore parse error
     }
+
     throw new APIError(res.status, detail);
   }
 

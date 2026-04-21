@@ -64,7 +64,7 @@ export default function PhotoCapture({
             <button
               type="button"
               onClick={() => handleRemove(index)}
-              className="absolute top-2 right-2 w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all opacity-0 group-hover:opacity-100"
+              className="absolute top-2 right-2 w-8 h-8 bg-black/60 hover:bg-black/80 text-white rounded-full flex items-center justify-center transition-all"
             >
               <X className="w-4 h-4" />
             </button>

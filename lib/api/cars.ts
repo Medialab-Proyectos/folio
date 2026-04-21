@@ -2,8 +2,10 @@ import { api } from './client';
 import type {
   CarCreate,
   CarRead,
+  CarReadWithFileUrl,
   CarUpdate,
   PaginatedCars,
+  PaginatedDataResponse,
   CarListParams,
   ProjectRead,
 } from './types';
@@ -14,8 +16,8 @@ export const carsApi = {
     api.get<PaginatedCars>('/cars/', { params: params as Record<string, string | number | boolean | undefined | null> }),
 
   /** Get current authenticated user's cars */
-  getMe: (): Promise<CarRead[]> =>
-    api.get<CarRead[]>('/cars/me'),
+  getMe: (): Promise<PaginatedDataResponse<CarReadWithFileUrl>> =>
+    api.get<PaginatedDataResponse<CarReadWithFileUrl>>('/cars/me'),
 
   /** Create a new car */
   create: (data: CarCreate): Promise<CarRead> =>

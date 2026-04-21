@@ -288,12 +288,9 @@ export default function DashboardPage() {
           
           <div className="card-premium divide-y divide-border/60 overflow-hidden">
             {recentEvents.length === 0 ? (
-              <div className="p-10 text-center relative overflow-hidden">
-                <div className="absolute inset-0 pointer-events-none flex items-end justify-center overflow-hidden">
-                  <UltraCarSvg variant="in" opacity={0.06} className="w-full" />
-                </div>
-                <div className="relative z-10 flex flex-col items-center">
-                  <div className="w-14 h-14 rounded-full bg-muted/90 backdrop-blur-sm mx-auto mb-3 flex items-center justify-center border border-border/50 shadow-inner">
+              <div className="p-10 text-center bg-muted/40">
+                <div className="flex flex-col items-center">
+                  <div className="w-14 h-14 rounded-full bg-muted backdrop-blur-sm mx-auto mb-3 flex items-center justify-center border border-border/50 shadow-inner">
                     <TrendingUp className="w-6 h-6 text-muted-foreground/50" />
                   </div>
                   <p className="text-sm font-medium text-foreground/80">No recent activity</p>

@@ -124,6 +124,8 @@ export interface VehicleEvent {
   timestamp: string;
   damagesCaptured: string[];
   notes?: string;
+  okParts?: string[];
+  partData?: Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }>;
 }
 
 export interface Damage {

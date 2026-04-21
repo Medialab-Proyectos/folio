@@ -149,11 +149,13 @@ export interface UserListParams {
 export interface CarCreate {
   make: string;
   model: string;
+  plate: string;
   year: number;
   user_id: string;
   facility_id: string;
   staff_user_id: string;
   nickname?: string;
+  color?: string;
   current_milage?: string;
   vin?: string;
   vin_number?: string;
@@ -171,7 +173,9 @@ export interface CarRead {
   id: string;
   make: string;
   model: string;
+  plate: string;
   year: number;
+  color?: string;
   nickname?: string;
   current_milage?: string;
   vin?: string;
@@ -193,6 +197,8 @@ export interface CarUpdate {
   nickname?: string;
   make?: string;
   model?: string;
+  plate?: string;
+  color?: string;
   year?: number;
   current_milage?: number;
   vin?: string;
@@ -217,11 +223,31 @@ export interface PaginatedCars {
 export interface CarListParams {
   page?: number;
   items?: number;
+  plate?: string;
   nickname?: string;
   make?: string;
   model?: string;
   year?: number;
   vin?: string;
+}
+
+export interface CarReadWithFileUrl extends CarRead {
+  file_url?: string;
+  recordCount?: number;
+}
+
+export interface PaginationInfo {
+  totalItems: number;
+  itemsPerPage: number;
+  currentPage: number;
+  totalPages: number;
+  hasNextPage: boolean;
+  hasPreviousPage: boolean;
+}
+
+export interface PaginatedDataResponse<T> {
+  data: T[];
+  pagination: PaginationInfo;
 }
 
 export interface CarPhotoCreate {

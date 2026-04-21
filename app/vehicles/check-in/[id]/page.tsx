@@ -12,16 +12,16 @@ import { carsApi } from '@/lib/api/cars';
 import { vehicleToCarUpdate } from '@/lib/api/mappers';
 
 const CAR_PARTS = [
-  { id: 'front_bumper', label: 'Front Bumper', x: 50, y: 10 },
-  { id: 'hood', label: 'Hood', x: 50, y: 25 },
-  { id: 'windshield', label: 'Windshield', x: 50, y: 35 },
-  { id: 'roof', label: 'Roof', x: 50, y: 50 },
-  { id: 'left_front_door', label: 'Left Front Door', x: 20, y: 50 },
-  { id: 'left_rear_door', label: 'Left Rear Door', x: 20, y: 65 },
-  { id: 'right_front_door', label: 'Right Front Door', x: 80, y: 50 },
-  { id: 'right_rear_door', label: 'Right Rear Door', x: 80, y: 65 },
-  { id: 'rear_bumper', label: 'Rear Bumper', x: 50, y: 90 },
-  { id: 'trunk', label: 'Trunk', x: 50, y: 80 },
+  { id: 'front_bumper', label: 'Front Bumper', x: 50, y: -8 },
+  { id: 'hood', label: 'Hood', x: 50, y: 4 },
+  { id: 'windshield', label: 'Windshield', x: 50, y: 22 },
+  { id: 'roof', label: 'Roof', x: 50, y: 45 },
+  { id: 'left_front_door', label: 'Left Front Door', x: 30, y: 35 },
+  { id: 'left_rear_door', label: 'Left Rear Door', x: 30, y: 60 },
+  { id: 'right_front_door', label: 'Right Front Door', x: 70, y: 35 },
+  { id: 'right_rear_door', label: 'Right Rear Door', x: 70, y: 60 },
+  { id: 'trunk', label: 'Trunk', x: 50, y: 90 },
+  { id: 'rear_bumper', label: 'Rear Bumper', x: 50, y: 106 },
 ];
 
 // ─── Compact vehicle summary shown on every check-in step ────────────────────
@@ -133,7 +133,9 @@ export default function CheckInPage() {
   const { store, currentUser, setVehicleEvents, setDamages, setNotifications, refreshVehicles, showToast } = useApp();
   const [vehicle, setVehicle] = useState<Vehicle | null>(null);
   const [selectedParts, setSelectedParts] = useState<string[]>([]);
-  const [currentDamage, setCurrentDamage] = useState<{ part: string; photos: string[]; notes: string } | null>(null);
+  const [okParts, setOkParts] = useState<string[]>([]);
+  const [partData, setPartData] = useState<Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }>>({});
+  const [currentDamage, setCurrentDamage] = useState<{ part: string; photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' } | null>(null);
   const [allDamages, setAllDamages] = useState<Array<{ part: string; photos: string[]; notes: string; severity: 'low' | 'medium' | 'high' }>>([]);
   const [step, setStep] = useState<'validation' | 'car-layout' | 'capture-damage' | 'review' | 'success'>('validation');
   const [loading, setLoading] = useState(false);
@@ -143,20 +145,98 @@ export default function CheckInPage() {
     setVehicle(vehicleData || null);
   }, [params.id, store.vehicles]);
 
+  // Load existing open damages from previous events into partData on mount
+  const existingOpenDamages = vehicle
+    ? store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open')
+    : [];
+
+  // Pre-load diagram state from last event (check-out or check-in)
+  const [preloadedDamages, setPreloadedDamages] = useState(false);
+  useEffect(() => {
+    if (!vehicle || preloadedDamages) return;
+
+    // Find the most recent event for this vehicle (could be check-out or check-in)
+    const lastEvent = [...store.vehicleEvents]
+      .filter(e => e.vehicleId === vehicle.id)
+      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+    const newPartData: Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }> = {};
+    const newSelected: string[] = [];
+    const newOk: string[] = [];
+
+    // 1) Restore partData and okParts from last event
+    if (lastEvent?.partData) {
+      Object.assign(newPartData, lastEvent.partData);
+    }
+    if (lastEvent?.okParts) {
+      newOk.push(...lastEvent.okParts);
+    }
+
+    // 2) Open damages → red points (override OK if damage still open)
+    const openDamages = store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open');
+    openDamages.forEach(d => {
+      newPartData[d.carPart] = {
+        photos: d.photos || [],
+        notes: d.description || '',
+        severity: d.severity,
+      };
+      newSelected.push(d.carPart);
+      const okIdx = newOk.indexOf(d.carPart);
+      if (okIdx !== -1) newOk.splice(okIdx, 1);
+    });
+
+    if (Object.keys(newPartData).length > 0 || newOk.length > 0) {
+      setPartData(newPartData);
+      setSelectedParts(newSelected);
+      setOkParts(newOk);
+    }
+    setPreloadedDamages(true);
+  }, [vehicle, store.damages, store.vehicleEvents, preloadedDamages]);
+
   const handlePartClick = (partId: string) => {
-    if (selectedParts.includes(partId)) {
+    const saved = partData[partId];
+    if (saved) {
+      setCurrentDamage({ part: partId, photos: saved.photos || [], notes: saved.notes || '', severity: saved.severity });
+    } else {
+      const existingDmg = existingOpenDamages.find(d => d.carPart === partId);
+      if (existingDmg) {
+        setCurrentDamage({
+          part: partId,
+          photos: existingDmg.photos || [],
+          notes: existingDmg.description || '',
+          severity: existingDmg.severity as 'low' | 'medium' | 'high' | undefined,
+        });
+      } else {
+        setCurrentDamage({ part: partId, photos: [], notes: '', severity: undefined });
+      }
+    }
+    setStep('capture-damage');
+  };
+
+  const handleMarkOk = () => {
+    if (currentDamage) {
+      const partId = currentDamage.part;
+      setPartData({ ...partData, [partId]: { photos: currentDamage.photos, notes: currentDamage.notes } });
+      if (currentDamage.photos.length > 0) {
+        setOkParts([...okParts.filter(p => p !== partId), partId]);
+      } else {
+        setOkParts(okParts.filter(p => p !== partId));
+      }
       setSelectedParts(selectedParts.filter(p => p !== partId));
       setAllDamages(allDamages.filter(d => d.part !== partId));
-    } else {
-      setSelectedParts([...selectedParts, partId]);
-      setCurrentDamage({ part: partId, photos: [], notes: '' });
-      setStep('capture-damage');
+      setCurrentDamage(null);
+      setStep('car-layout');
     }
   };
 
-  const handleSaveDamage = (severity: 'low' | 'medium' | 'high') => {
-    if (currentDamage) {
-      setAllDamages([...allDamages, { ...currentDamage, severity }]);
+  const handleSaveDamage = () => {
+    if (currentDamage && currentDamage.severity) {
+      const partId = currentDamage.part;
+      const damage = { ...currentDamage, severity: currentDamage.severity };
+      setPartData({ ...partData, [partId]: { photos: currentDamage.photos, notes: currentDamage.notes, severity: currentDamage.severity } });
+      setSelectedParts([...selectedParts.filter(p => p !== partId), partId]);
+      setOkParts(okParts.filter(p => p !== partId));
+      setAllDamages([...allDamages.filter(d => d.part !== partId), damage]);
       setCurrentDamage(null);
       setStep('car-layout');
     }
@@ -164,7 +244,10 @@ export default function CheckInPage() {
 
   const handleSkipDamage = () => {
     if (currentDamage) {
-      setSelectedParts(selectedParts.filter(p => p !== currentDamage.part));
+      // Preserve any photos/notes taken before going back
+      if (currentDamage.photos.length > 0 || currentDamage.notes) {
+        setPartData({ ...partData, [currentDamage.part]: { photos: currentDamage.photos, notes: currentDamage.notes, severity: currentDamage.severity } });
+      }
       setCurrentDamage(null);
       setStep('car-layout');
     }
@@ -183,7 +266,7 @@ export default function CheckInPage() {
       // registrationCompleted, notes) are preserved in the nickname JSON field.
       await carsApi.update(vehicle.id, vehicleToCarUpdate({ ...vehicle, status: 'in_storage', statusUpdatedAt: timestamp }));
 
-      // Create vehicle event
+      // Create vehicle event — include okParts and partData so check-out can restore diagram state
       const newEvent: VehicleEvent = {
         id: eventId,
         eventType: 'arrival_after_use',
@@ -193,6 +276,8 @@ export default function CheckInPage() {
         timestamp: timestamp,
         damagesCaptured: allDamages.map(d => d.part),
         notes: '',
+        okParts: [...okParts],
+        partData: { ...partData },
       };
       setVehicleEvents([...store.vehicleEvents, newEvent]);
 
@@ -338,52 +423,32 @@ export default function CheckInPage() {
           <PhotoGallery vehicle={vehicle} />
 
           <div className="card-premium p-4">
-            <div className="relative w-full aspect-[2/3] bg-muted/20 rounded-lg">
-              <svg viewBox="0 0 100 100" className="w-full h-full">
-                <g className="text-muted-foreground/50" fill="none" stroke="currentColor" strokeWidth="1.2">
-                  {/* Main car body - top view */}
-                  <path d="M36,6 L64,6 C68,6 72,8 73,11 L76,24 L78,38 L78,62 L76,76 L73,89 C72,92 68,94 64,94 L36,94 C32,94 28,92 27,89 L24,76 L22,62 L22,38 L24,24 L27,11 C28,8 32,6 36,6 Z" />
-                  {/* Front windshield */}
-                  <path d="M38,19 L62,19 L61,32 L39,32 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
-                  {/* Rear window */}
-                  <path d="M39,68 L61,68 L62,81 L38,81 Z" fill="currentColor" fillOpacity="0.08" strokeWidth="0.8" />
-                  {/* Cabin roof */}
-                  <rect x="38" y="32" width="24" height="36" rx="3" fill="currentColor" fillOpacity="0.05" strokeWidth="0.8" />
-                  {/* Front left wheel */}
-                  <rect x="8" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Front right wheel */}
-                  <rect x="79" y="18" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Rear left wheel */}
-                  <rect x="8" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Rear right wheel */}
-                  <rect x="79" y="60" width="13" height="22" rx="4" fill="currentColor" fillOpacity="0.18" strokeWidth="0.8" />
-                  {/* Left mirror */}
-                  <path d="M22,34 L15,37 L15,43 L22,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
-                  {/* Right mirror */}
-                  <path d="M78,34 L85,37 L85,43 L78,43 Z" fill="currentColor" fillOpacity="0.25" strokeWidth="0.8" />
-                  {/* Door separator */}
-                  <path d="M22,58 L78,58" strokeWidth="0.6" strokeDasharray="2,2" opacity="0.5" />
-                  {/* Hood lines */}
-                  <path d="M42,10 L42,22 M58,10 L58,22" strokeWidth="0.5" opacity="0.35" />
-                  {/* Trunk lines */}
-                  <path d="M42,78 L42,90 M58,78 L58,90" strokeWidth="0.5" opacity="0.35" />
-                </g>
-
-                {CAR_PARTS.map(part => (
-                  <circle
-                    key={part.id}
-                    cx={part.x}
-                    cy={part.y}
-                    r="4"
-                    className={`cursor-pointer transition-all ${
-                      selectedParts.includes(part.id)
-                        ? 'fill-destructive stroke-destructive'
-                        : 'fill-muted stroke-muted-foreground hover:fill-destructive/50'
-                    }`}
-                    strokeWidth="1"
-                    onClick={() => handlePartClick(part.id)}
-                  />
-                ))}
+            <div className="relative w-full aspect-[2/3] bg-muted/20 rounded-lg overflow-hidden">
+              {/* eslint-disable-next-line @next/next/no-img-element */}
+              <img src="/auto.png" alt="Vehicle inspection" className="w-full h-full object-contain" />
+              <svg viewBox="0 0 100 100" className="absolute inset-0 w-full h-full">
+                {CAR_PARTS.map(part => {
+                  const hasExistingDamage = existingOpenDamages.some(d => d.carPart === part.id);
+                  return (
+                    <circle
+                      key={part.id}
+                      cx={part.x}
+                      cy={part.y}
+                      r="4"
+                      className={`cursor-pointer transition-all ${
+                        okParts.includes(part.id)
+                          ? 'fill-green-500 stroke-green-600'
+                          : selectedParts.includes(part.id)
+                          ? 'fill-destructive stroke-destructive'
+                          : hasExistingDamage
+                          ? 'fill-destructive stroke-destructive'
+                          : 'fill-muted stroke-muted-foreground hover:fill-destructive/50'
+                      }`}
+                      strokeWidth="1"
+                      onClick={() => handlePartClick(part.id)}
+                    />
+                  );
+                })}
               </svg>
             </div>
           </div>
@@ -454,16 +519,37 @@ export default function CheckInPage() {
           <div className="space-y-2">
             <label className="text-sm font-medium">Severity</label>
             <div className="grid grid-cols-3 gap-2">
-              <Button variant="outline" onClick={() => handleSaveDamage('low')} className="h-12">Low</Button>
-              <Button variant="outline" onClick={() => handleSaveDamage('medium')} className="h-12">Medium</Button>
-              <Button
-                variant="outline"
-                onClick={() => handleSaveDamage('high')}
-                className="h-12 border-destructive text-destructive hover:bg-destructive hover:text-white"
-              >
-                High
-              </Button>
+              {(['low', 'medium', 'high'] as const).map(sev => (
+                <Button
+                  key={sev}
+                  variant="outline"
+                  onClick={() => setCurrentDamage({ ...currentDamage, severity: sev })}
+                  className={`h-12 ${
+                    currentDamage.severity === sev
+                      ? sev === 'high' ? 'bg-destructive text-white border-destructive'
+                        : sev === 'medium' ? 'bg-yellow-500 text-white border-yellow-500'
+                        : 'bg-blue-500 text-white border-blue-500'
+                      : sev === 'high' ? 'border-destructive text-destructive hover:bg-destructive hover:text-white'
+                      : ''
+                  }`}
+                >
+                  {sev.charAt(0).toUpperCase() + sev.slice(1)}
+                </Button>
+              ))}
             </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-2 pt-2">
+            <Button variant="outline" onClick={handleMarkOk} className="h-12 border-green-500 text-green-600 hover:bg-green-500 hover:text-white">
+              OK — No Damage
+            </Button>
+            <Button
+              onClick={handleSaveDamage}
+              disabled={!currentDamage.severity}
+              className="h-12 btn-dark"
+            >
+              Confirm
+            </Button>
           </div>
         </div>
       </div>
