@@ -10,6 +10,7 @@ import { Vehicle, Damage, VehicleEvent } from '@/lib/types';
 import PhotoCapture from '@/components/shared/photo-capture';
 import { carsApi } from '@/lib/api/cars';
 import { vehicleToCarUpdate } from '@/lib/api/mappers';
+import { inspectionsApi } from '@/lib/api/inspections';
 
 const CAR_PARTS = [
   { id: 'front_bumper', label: 'Front Bumper', x: 50, y: -8 },
@@ -150,48 +151,64 @@ export default function CheckInPage() {
     ? store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open')
     : [];
 
-  // Pre-load diagram state from last event (check-out or check-in)
+  // Pre-load diagram state from backend (survey-cars) and local store
   const [preloadedDamages, setPreloadedDamages] = useState(false);
   useEffect(() => {
     if (!vehicle || preloadedDamages) return;
-
-    // Find the most recent event for this vehicle (could be check-out or check-in)
-    const lastEvent = [...store.vehicleEvents]
-      .filter(e => e.vehicleId === vehicle.id)
-      .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
-
-    const newPartData: Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }> = {};
-    const newSelected: string[] = [];
-    const newOk: string[] = [];
-
-    // 1) Restore partData and okParts from last event
-    if (lastEvent?.partData) {
-      Object.assign(newPartData, lastEvent.partData);
-    }
-    if (lastEvent?.okParts) {
-      newOk.push(...lastEvent.okParts);
-    }
-
-    // 2) Open damages → red points (override OK if damage still open)
-    const openDamages = store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open');
-    openDamages.forEach(d => {
-      newPartData[d.carPart] = {
-        photos: d.photos || [],
-        notes: d.description || '',
-        severity: d.severity,
-      };
-      newSelected.push(d.carPart);
-      const okIdx = newOk.indexOf(d.carPart);
-      if (okIdx !== -1) newOk.splice(okIdx, 1);
-    });
-
-    if (Object.keys(newPartData).length > 0 || newOk.length > 0) {
-      setPartData(newPartData);
-      setSelectedParts(newSelected);
-      setOkParts(newOk);
-    }
     setPreloadedDamages(true);
-  }, [vehicle, store.damages, store.vehicleEvents, preloadedDamages]);
+
+    (async () => {
+      const newPartData: Record<string, { photos: string[]; notes: string; severity?: 'low' | 'medium' | 'high' }> = {};
+      const newSelected: string[] = [];
+      const newOk: string[] = [];
+
+      // 1) Try loading from backend first
+      try {
+        const backendData = await inspectionsApi.load(vehicle.id);
+        if (backendData) {
+          for (const point of backendData.points) {
+            newPartData[point.part] = {
+              photos: point.photos,
+              notes: point.notes || '',
+              severity: point.severity,
+            };
+            if (point.status === 'damage') {
+              newSelected.push(point.part);
+            } else {
+              newOk.push(point.part);
+            }
+          }
+        }
+      } catch (err) {
+        console.warn('[check-in] Failed to load inspection from backend, falling back to local store:', err);
+      }
+
+      // 2) If nothing from backend, try local store
+      if (Object.keys(newPartData).length === 0 && newOk.length === 0) {
+        const lastEvent = [...store.vehicleEvents]
+          .filter(e => e.vehicleId === vehicle.id)
+          .sort((a, b) => new Date(b.timestamp).getTime() - new Date(a.timestamp).getTime())[0];
+
+        if (lastEvent?.partData) Object.assign(newPartData, lastEvent.partData);
+        if (lastEvent?.okParts) newOk.push(...lastEvent.okParts);
+
+        const openDamages = store.damages.filter(d => d.vehicleId === vehicle.id && d.status === 'open');
+        openDamages.forEach(d => {
+          newPartData[d.carPart] = { photos: d.photos || [], notes: d.description || '', severity: d.severity };
+          newSelected.push(d.carPart);
+          const okIdx = newOk.indexOf(d.carPart);
+          if (okIdx !== -1) newOk.splice(okIdx, 1);
+        });
+      }
+
+      if (Object.keys(newPartData).length > 0 || newOk.length > 0) {
+        setPartData(newPartData);
+        setSelectedParts(newSelected);
+        setOkParts(newOk);
+      }
+    })();
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [vehicle?.id]);
 
   const handlePartClick = (partId: string) => {
     const saved = partData[partId];
@@ -308,6 +325,13 @@ export default function CheckInPage() {
           createdAt: timestamp,
         };
         setNotifications([...store.notifications, newNotification]);
+      }
+
+      // Save inspection data to backend (survey-cars)
+      try {
+        await inspectionsApi.save(vehicle.id, 'checkin', partData, okParts, selectedParts);
+      } catch (err) {
+        console.warn('[check-in] Failed to save inspection to backend:', err);
       }
 
       await refreshVehicles();

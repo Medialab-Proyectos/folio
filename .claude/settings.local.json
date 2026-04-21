@@ -28,7 +28,8 @@
       "Bash(nslookup:*)",
       "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/lib/api/**)",
       "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/src/lib/**)",
-      "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/**)"
+      "Read(//c/Users/coben/OneDrive/Desktop/Garage/version2Sof/**)",
+      "Bash(python3 -c \"import sys,json; d=json.load\\(sys.stdin\\); print\\('\\\\n'.join\\(sorted\\(d.get\\('paths',{}\\).keys\\(\\)\\)\\)\\)\")"
     ]
   }
 }
